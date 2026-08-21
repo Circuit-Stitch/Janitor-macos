@@ -36,13 +36,14 @@ struct DiagnosticLogView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(lines) { line in
+                        ForEach(Array(lines.enumerated()), id: \.element.id) { index, line in
                             Text(Self.format(line))
                                 .font(Theme.monoSmall)
                                 .foregroundStyle(color(line.level))
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .id(line.id)
+                                .accessibilityIdentifier("log-line-\(index)")
                         }
                     }
                     .padding(.horizontal, 10)
@@ -56,6 +57,7 @@ struct DiagnosticLogView: View {
         }
         .frame(height: 180)
         .background(Color(nsColor: .textBackgroundColor))
+        .accessibilityIdentifier("diagnostic-log")
     }
 
     private func color(_ level: LogLine.Level) -> Color {

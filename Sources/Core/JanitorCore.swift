@@ -102,6 +102,16 @@ protocol JanitorCore: AnyObject, Sendable {
     func identityCenter() -> (startURL: String, region: String)
     func setIdentityCenter(startURL: String, region: String)
 
+    /// The persisted width of the matrix's ENTRY column, in points.
+    ///
+    /// The caller supplies the floor and the default, so Config knows nothing about view
+    /// sizes. It enforces one rule: a stored width is never returned below the floor, so
+    /// a hand-edited config cannot render a column too narrow to read.
+    func entryColumnWidth(minimum: Double, default: Double) -> Double
+
+    /// Persist a resized ENTRY column, clamped to the floor the caller names.
+    func setEntryColumnWidth(_ points: Double, minimum: Double)
+
     // MARK: Pure rules, decided in Rust
 
     /// Assemble the rendered row list. When `grouped`, Entry names that share a prefix

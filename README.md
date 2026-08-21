@@ -73,6 +73,12 @@ Environment; the review dialog lists each edit by Entry name and byte count, nev
 Value; and Apply sends the batch through the engine that leaves every Entry it was not
 given alone.
 
+The matrix is tested in two lanes: the layout arithmetic as plain functions, and the
+rendered views against the running app through XCUITest. Bringing the Slint shell's view
+tests over found three real defects — the comparison columns pushed the table out of its
+pane, a released Value stayed on screen until it timed out, and the two bands of the
+freeze pane were eight points out of step.
+
 Still to come: the real core behind all of it.
 
 ## Architecture
@@ -90,6 +96,7 @@ Sources/
   Model/
     AppModel.swift      the reducer and every piece of rendering state
   Views/                the windows, the matrix, the cells, the wizard, the log panel
+    MatrixLayout.swift  the matrix's layout arithmetic, kept out of the views
   Platform/
     Pasteboard.swift    concealed and transient markers, and the timed clear
 ```
@@ -103,6 +110,11 @@ badge, the state glyph, the drift badge, the error banner — is a function on
 `JanitorCore`, implemented in Rust. The shell calls them. It does not reimplement them.
 `StubCore` carries temporary copies, and the tests in `Tests/JanitorTests` pin those
 copies to the Rust behavior so they cannot drift before they are deleted.
+
+What the shell does own is layout, and layout lives in `MatrixLayout` rather than inside a
+`body` where nothing can reach it. How wide a comparison column is, where it stops
+shrinking, how a drag on the ENTRY column tracks the cursor, which cluster header floats
+at a given scroll offset — each is a function with a test.
 
 ## Security
 
@@ -154,14 +166,25 @@ xcodegen generate        # Janitor.xcodeproj is generated and gitignored
 open Janitor.xcodeproj
 ```
 
-From the command line:
+From the command line, in two lanes:
 
 ```bash
+# Unit tests. No signing identity needed, and it finishes in about a second.
 xcodebuild test -project Janitor.xcodeproj -scheme Janitor \
   -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO
+
+# UI tests. Launches the app and drives it, so it does need one, and it takes a minute
+# and a half. It also moves the pointer and types, so it needs a real login session.
+xcodebuild test -project Janitor.xcodeproj -scheme JanitorUITests -destination 'platform=macOS'
 ```
 
-Run `xcodegen generate` again after editing `project.yml`.
+The two lanes are separate schemes on purpose. The UI tests drive the built app through
+the accessibility tree, which needs a signed, launchable app; a fresh clone with no
+certificate can still run everything in the first lane.
+[ADR 0007](docs/adr/0007-the-slint-view-tests-become-two-lanes.md) records the split and
+what each lane covers.
+
+Run `xcodegen generate` again after editing `project.yml` or after adding a source file.
 
 ## CI
 
@@ -177,8 +200,8 @@ machine. Xcode Cloud is the only lane now.
 and its amendment record the decision. The workflow's own header holds the one-line `sed`
 that brings it back.
 
-Two checks it made are yours to run until then. The tests, with the `xcodebuild test`
-command above. And the entitlement set, after an archive:
+Two checks it made are yours to run until then. The tests, with both `xcodebuild test`
+commands above. And the entitlement set, after an archive:
 
 ```bash
 codesign -d --entitlements :- path/to/Janitor.app

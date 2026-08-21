@@ -144,6 +144,7 @@ struct ContentView: View {
                 .labelStyle(.titleAndIcon)
                 .font(.caption)
                 .foregroundStyle(model.readWrite ? Theme.drift : .secondary)
+                .accessibilityIdentifier("topbar-readwrite")
         }
         ToolbarItem {
             Toggle("Group by prefix", isOn: $model.grouped)
@@ -161,15 +162,17 @@ struct ContentView: View {
     }
 
     private var statusBar: some View {
-        HStack(spacing: 14) {
-            legend("=", "Aligned", Theme.aligned)
-            legend("≠", "Drift", Theme.drift)
-            legend("∅", "Gap", Theme.gap)
+        let counts = model.stateCounts
+        return HStack(spacing: 14) {
+            legend("=", "Aligned", Theme.aligned, counts.aligned)
+            legend("≠", "Drift", Theme.drift, counts.drift)
+            legend("∅", "Gap", Theme.gap, counts.gap)
             Spacer()
             if let identity = model.identity {
                 Text(identity)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("statusbar-identity")
             }
             if let loadedAt = model.loadedAt {
                 // `.relative` keeps counting on its own, so the operator can see how
@@ -177,6 +180,7 @@ struct ContentView: View {
                 (Text("read ") + Text(loadedAt, style: .relative) + Text(" ago"))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+                    .accessibilityIdentifier("statusbar-snapshot")
             }
             Button {
                 model.logVisible.toggle()
@@ -186,13 +190,18 @@ struct ContentView: View {
                     .font(.caption)
             }
             .buttonStyle(.link)
+            .accessibilityIdentifier("log-toggle")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 5)
         .background(.bar)
     }
 
-    private func legend(_ glyph: String, _ name: String, _ color: Color) -> some View {
+    /// One legend entry: the glyph, the state it stands for, and how many rows are in
+    /// it. The count is a tally of the masked matrix, so it carries no Value.
+    private func legend(_ glyph: String, _ name: String, _ color: Color, _ count: Int)
+        -> some View
+    {
         HStack(spacing: 4) {
             Text(glyph)
                 .font(Theme.monoSmall)
@@ -200,8 +209,13 @@ struct ContentView: View {
             Text(name)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Text("\(count)")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.tertiary)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(name) \(count)")
+        .accessibilityIdentifier("legend-\(name.lowercased())")
     }
 }
 

@@ -118,6 +118,17 @@
 #             -destination 'platform=macOS' \
 #             CODE_SIGNING_ALLOWED=NO
 #
+#       # The UI lane launches the app and drives it through the accessibility tree, so it needs a
+#       # signing identity and a real login session. The runner is a Tart guest with a desktop, so it
+#       # can run this; a headless box could not. ADR 0007 says what the lane covers.
+#       - name: UI test
+#         run: |
+#           set -euo pipefail
+#           xcodebuild test \
+#             -project Janitor.xcodeproj \
+#             -scheme JanitorUITests \
+#             -destination 'platform=macOS'
+#
 #       # Ad-hoc signed, not CODE_SIGNING_ALLOWED=NO. Skipping signing seals no resources and drops
 #       # every entitlement, and the Mac App Store requires the sandbox one. Ad-hoc needs no
 #       # certificate and no registered device, and keeps them.

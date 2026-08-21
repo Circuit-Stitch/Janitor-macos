@@ -18,8 +18,13 @@ import SwiftUI
 
 struct CellView: View {
     let cell: MatrixCell
+    /// The column's width, which the table computes from the room it has.
+    let width: CGFloat
     let environment: String
     let entryName: String
+    /// The cell's position in the matrix, as `envcell-<row>-<column>`. Structural only:
+    /// it names where the cell is, never what is in it.
+    let identifier: String
     /// The plaintext, present only while this cell is the revealed one.
     let revealedText: String?
     /// Whether this cell has an edit staged, which is drawn rather than described.
@@ -36,15 +41,34 @@ struct CellView: View {
 
     var body: some View {
         content
-            .frame(width: Theme.Metrics.environmentColumn, height: Theme.Metrics.rowHeight,
-                   alignment: .leading)
+            // The padding is inside the frame, so the cell is exactly one column wide
+            // and the body's columns step by the same amount the header's do.
             .padding(.horizontal, 8)
+            .frame(width: width, height: Theme.Metrics.rowHeight, alignment: .leading)
             .contentShape(Rectangle())
             .background(isStaged ? Theme.drift.opacity(0.18) : .clear)
-            .gesture(pressGesture)
+            // Press and hold, reported by `onPressingChanged`: true when the press
+            // lands, false when it lifts or is cancelled. A `DragGesture` reads more
+            // naturally here and is what this was, but on macOS its `onEnded` never
+            // arrives for a press that does not move — so the Value stayed on screen
+            // after the operator let go, until the ten-second timeout took it down.
+            //
+            // The duration is never reached, and `perform` is never called. The press
+            // always ends first, and its ending is the only event this needs.
+            .onLongPressGesture(
+                minimumDuration: .infinity,
+                maximumDistance: .infinity,
+                perform: {},
+                onPressingChanged: { isPressing in
+                    guard isPresent else { return }
+                    pressing = isPressing
+                    if isPressing { onPress() } else { onRelease() }
+                }
+            )
             .accessibilityElement()
             .accessibilityLabel(accessibilityLabel)
             .accessibilityHint(isPresent ? "Press and hold to reveal the value" : "")
+            .accessibilityIdentifier(identifier)
             .contextMenu { menu }
     }
 
@@ -79,22 +103,6 @@ struct CellView: View {
                 .opacity(pressing ? 0.4 : 1)
             }
         }
-    }
-
-    /// Press and hold. `onPress` fires the moment the press starts and `onRelease` on
-    /// the way up, including when the gesture is cancelled, so a drag off the cell ends
-    /// the reveal the same way lifting a finger does.
-    private var pressGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { _ in
-                guard isPresent, !pressing else { return }
-                pressing = true
-                onPress()
-            }
-            .onEnded { _ in
-                pressing = false
-                onRelease()
-            }
     }
 
     @ViewBuilder

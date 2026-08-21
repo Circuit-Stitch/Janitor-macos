@@ -713,6 +713,41 @@ final class AppModel {
         core.summarizeEdits(edits)
     }
 
+    // MARK: View state the core persists
+
+    /// The ENTRY column's width. The floor and the default come from the layout, so the
+    /// core stores a number and holds no opinion about it beyond never returning one
+    /// below the floor.
+    var entryColumnWidth: CGFloat {
+        CGFloat(
+            core.entryColumnWidth(
+                minimum: Double(MatrixLayout.entryFloor),
+                default: Double(MatrixLayout.entryDefault)
+            )
+        )
+    }
+
+    /// Persist the ENTRY column's width. Called when the drag ends, not while it moves.
+    func setEntryColumnWidth(_ points: CGFloat) {
+        core.setEntryColumnWidth(Double(points), minimum: Double(MatrixLayout.entryFloor))
+    }
+
+    // MARK: Derived state
+
+    /// How many rows are in each state, for the legend at the foot of the window. This
+    /// counts the masked matrix, so no Value is involved.
+    var stateCounts: (aligned: Int, drift: Int, gap: Int) {
+        var counts = (aligned: 0, drift: 0, gap: 0)
+        for row in matrix.rows {
+            switch row.state {
+            case .aligned: counts.aligned += 1
+            case .drift: counts.drift += 1
+            case .gap: counts.gap += 1
+            }
+        }
+        return counts
+    }
+
     /// Which main pane to show.
     var pane: MainPane {
         core.mainPane(status: status, hasApplications: !apps.isEmpty)
@@ -727,7 +762,7 @@ final class AppModel {
         core.paneBody(pane, statusMessage: banner)
     }
 
-    // MARK: Derived state
+    // MARK: Rebuilding
 
     private func rebuildItems() {
         items = core.matrixItems(names: matrix.rows.map(\.name), grouped: grouped)

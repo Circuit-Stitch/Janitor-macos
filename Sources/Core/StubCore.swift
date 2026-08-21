@@ -308,6 +308,16 @@ final class StubCore: JanitorCore, @unchecked Sendable {
         }
     }
 
+    func entryColumnWidth(minimum: Double, default fallback: Double) -> Double {
+        lock.withLock {
+            max(minimum, config.entryColumnWidth ?? fallback)
+        }
+    }
+
+    func setEntryColumnWidth(_ points: Double, minimum: Double) {
+        lock.withLock { config.entryColumnWidth = max(minimum, points) }
+    }
+
     // MARK: Pure rules
 
     func matrixItems(names: [String], grouped: Bool) -> [MatrixItem] {
@@ -536,12 +546,16 @@ extension StubCore {
         /// The browse region. Empty means "use the Identity Center region", which is
         /// what lets a single-region org never pick one.
         var secretRegion: String
+        /// The ENTRY column's width, once someone has dragged it. View state, and the
+        /// only view state Config holds.
+        var entryColumnWidth: Double?
         var applications: [StubApp]
 
         static let seed = StubConfig(
             ssoStartURL: "https://example.awsapps.com/start",
             ssoRegion: "us-east-1",
             secretRegion: "",
+            entryColumnWidth: nil,
             applications: [
                 StubApp(
                     name: "Payments API",

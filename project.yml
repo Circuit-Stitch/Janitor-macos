@@ -95,6 +95,21 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.circuitstitch.apps.janitor.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  # The UI tests drive the built app through the accessibility tree. That needs a
+  # signed, launchable app, so they cannot run under CODE_SIGNING_ALLOWED=NO the way the
+  # unit tests do. They live in their own scheme for that reason — see ADR 0007.
+  JanitorUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/JanitorUITests
+    dependencies:
+      - target: Janitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.circuitstitch.apps.janitor.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   Janitor:
     build:
@@ -108,3 +123,16 @@ schemes:
         - JanitorTests
     archive:
       config: Release
+
+  # A second scheme, because this lane needs a signing identity and the one above does
+  # not. Keeping them together would mean a fresh clone with no certificate could run no
+  # tests at all.
+  JanitorUITests:
+    build:
+      targets:
+        Janitor: all
+        JanitorUITests: [testing]
+    test:
+      config: Debug
+      targets:
+        - JanitorUITests

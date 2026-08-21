@@ -19,9 +19,15 @@ struct JanitorApp: App {
         Window("Janitor", id: "main") {
             ContentView(model: model)
                 .frame(minWidth: 820, minHeight: 480)
+                .frame(width: Self.fixedSize?.width, height: Self.fixedSize?.height)
                 .task { model.signIn() }
         }
         .defaultSize(width: 1100, height: 700)
+        // With a size named by the environment the window is pinned to it. Without one
+        // this is `.automatic`, which is the ordinary resizable window. Pinning only the
+        // content would leave the window at whatever size it was restored to, with the
+        // matrix floating in the middle of it.
+        .windowResizability(Self.fixedSize == nil ? .automatic : .contentSize)
         .commands { commands }
 
         // One Manage window, not a group. The model holds one binding, so a second
@@ -34,6 +40,24 @@ struct JanitorApp: App {
         Settings {
             SettingsView(model: model)
         }
+    }
+
+    /// A window size named by the environment, as `WIDTHxHEIGHT`.
+    ///
+    /// The layout is what the UI tests assert, and the layout depends on how much room
+    /// the window has, so a test has to be able to name a width. Debug builds only: the
+    /// shipping app sizes its window the way every other Mac app does.
+    private static var fixedSize: CGSize? {
+        #if DEBUG
+            guard let raw = ProcessInfo.processInfo.environment["JANITOR_WINDOW_SIZE"] else {
+                return nil
+            }
+            let parts = raw.split(separator: "x").compactMap { Double($0) }
+            guard parts.count == 2 else { return nil }
+            return CGSize(width: parts[0], height: parts[1])
+        #else
+            nil
+        #endif
     }
 
     @CommandsBuilder

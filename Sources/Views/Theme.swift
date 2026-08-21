@@ -27,13 +27,14 @@ enum Theme {
         }
     }
 
+    /// The fixed sizes the matrix is built from. The widths that change with the window
+    /// or with a drag are computed in `MatrixLayout`, which is where they can be tested.
     enum Metrics {
         static let stateColumn: CGFloat = 34
-        static let entryColumn: CGFloat = 300
-        static let entryColumnMinimum: CGFloat = 200
-        static let environmentColumn: CGFloat = 170
         static let rowHeight: CGFloat = 30
         static let headerHeight: CGFloat = 26
+        /// The hairline between the frozen pair and the comparison columns.
+        static let dividerWidth: CGFloat = 1
     }
 
     /// The tabular figures the matrix reads in. Lengths line up column to column.

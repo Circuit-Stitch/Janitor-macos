@@ -7,6 +7,16 @@
 //  the left two columns never move horizontally, and the header band tracks the body's
 //  horizontal offset so the Environment names stay over their own columns.
 //
+//  The two bands stay aligned because they are built from the same numbers. Each starts
+//  after the same frozen width and the same hairline, and each steps by the same column
+//  width. Padding sits inside those frames rather than outside, so a header cell and a
+//  body cell are the same size and start in the same place.
+//
+//  Comparison columns divide the room left beside the frozen pair, down to a floor.
+//  Above the floor they stretch, so a two-Environment Application in a wide window has
+//  no empty gutter on the right. At the floor they stop shrinking and the region
+//  scrolls instead.
+//
 //  Rows come from the core already assembled: cluster headers, data rows, zebra
 //  stripes, and which prefix each row's header already shows. This view renders that
 //  list. It does not decide it.
@@ -23,53 +33,90 @@ import SwiftUI
 struct MatrixTable: View {
     let model: AppModel
 
-    @State private var entryWidth = Theme.Metrics.entryColumn
+    /// The ENTRY column's width, seeded from what the core has stored.
+    @State private var entryWidth: CGFloat
+    /// The width the ENTRY column had when the resize press landed. The drag is measured
+    /// from there, so the column tracks the cursor instead of running away from it.
+    @State private var dragAnchor: CGFloat?
     /// The body's horizontal scroll offset, mirrored onto the header band.
     @State private var horizontalOffset: CGFloat = 0
     /// The body's vertical scroll offset, which decides which cluster header is pinned.
     @State private var verticalOffset: CGFloat = 0
 
-    private var frozenWidth: CGFloat { Theme.Metrics.stateColumn + entryWidth }
+    @MainActor
+    init(model: AppModel) {
+        self.model = model
+        _entryWidth = State(initialValue: model.entryColumnWidth)
+    }
 
+    private var frozenWidth: CGFloat { MatrixLayout.frozenWidth(entryWidth: entryWidth) }
+
+    /// One comparison column's width, given the room the band has.
+    private func columnWidth(band: CGFloat) -> CGFloat {
+        MatrixLayout.environmentColumnWidth(
+            available: band, count: model.matrix.environments.count
+        )
+    }
+
+    // The pane's width is what decides the layout, so it is read once and handed down.
+    //
+    // Without it the horizontal region asks for as much width as its columns need, the
+    // matrix grows wider than the pane, and the whole table slides out from under the
+    // header and the sidebar. Reading the width here and giving the region exactly what
+    // is left makes every width in the table a function of the window instead.
     var body: some View {
-        VStack(spacing: 0) {
-            headerBand
-            Divider()
-            table
+        GeometryReader { proxy in
+            let band = MatrixLayout.availableEnvironmentWidth(
+                total: proxy.size.width, entryWidth: entryWidth
+            )
+            VStack(spacing: 0) {
+                headerBand(band: band)
+                Divider()
+                table(band: band)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .background(Color(nsColor: .textBackgroundColor))
     }
 
     // MARK: Header band
 
-    private var headerBand: some View {
+    private func headerBand(band: CGFloat) -> some View {
         HStack(spacing: 0) {
-            Text("")
+            Color.clear
                 .frame(width: Theme.Metrics.stateColumn)
+                .accessibilityElement()
+                .accessibilityLabel("State")
+                .accessibilityIdentifier("statehdr")
             Text("ENTRY")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: entryWidth, alignment: .leading)
                 .padding(.leading, 8)
+                .frame(width: entryWidth, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("entryhdr")
             columnResizer
-            environmentHeaders
-                .offset(x: -horizontalOffset)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            environmentHeaders(band: band)
+                .offset(x: MatrixLayout.headerBandOffset(bodyContentOffset: horizontalOffset))
+                .frame(width: band, alignment: .leading)
                 .clipped()
         }
         .frame(height: Theme.Metrics.headerHeight)
         .background(.bar)
     }
 
-    private var environmentHeaders: some View {
+    private func environmentHeaders(band: CGFloat) -> some View {
         HStack(spacing: 0) {
-            ForEach(Array(model.matrix.environments.enumerated()), id: \.offset) { _, name in
+            ForEach(Array(model.matrix.environments.enumerated()), id: \.offset) { index, name in
                 Text(name)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .frame(width: Theme.Metrics.environmentColumn, alignment: .leading)
                     .padding(.horizontal, 8)
+                    .frame(width: columnWidth(band: band), alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(name)
+                    .accessibilityIdentifier("envhead-\(index)")
             }
         }
     }
@@ -79,7 +126,7 @@ struct MatrixTable: View {
     private var columnResizer: some View {
         Rectangle()
             .fill(Color(nsColor: .separatorColor))
-            .frame(width: 1)
+            .frame(width: Theme.Metrics.dividerWidth)
             .overlay {
                 Rectangle()
                     .fill(.clear)
@@ -89,25 +136,39 @@ struct MatrixTable: View {
                     .gesture(
                         DragGesture(minimumDistance: 1)
                             .onChanged { drag in
-                                entryWidth = max(
-                                    Theme.Metrics.entryColumnMinimum,
-                                    entryWidth + drag.translation.width
+                                let anchor = dragAnchor ?? entryWidth
+                                dragAnchor = anchor
+                                entryWidth = MatrixLayout.entryWidth(
+                                    anchor: anchor, translation: drag.translation.width
                                 )
                             }
+                            .onEnded { drag in
+                                let anchor = dragAnchor ?? entryWidth
+                                entryWidth = MatrixLayout.entryWidth(
+                                    anchor: anchor, translation: drag.translation.width
+                                )
+                                dragAnchor = nil
+                                // Persisted on release, not while it moves: one write
+                                // for one resize.
+                                model.setEntryColumnWidth(entryWidth)
+                            }
                     )
+                    .accessibilityElement()
+                    .accessibilityLabel("Resize the Entry column")
+                    .accessibilityIdentifier("entry-resize-handle")
             }
     }
 
     // MARK: Body
 
-    private var table: some View {
+    private func table(band: CGFloat) -> some View {
         ScrollView(.vertical) {
             HStack(alignment: .top, spacing: 0) {
                 frozenColumn
                 Rectangle()
                     .fill(Color(nsColor: .separatorColor))
-                    .frame(width: 1)
-                environmentColumns
+                    .frame(width: Theme.Metrics.dividerWidth)
+                environmentColumns(band: band)
             }
         }
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -122,33 +183,12 @@ struct MatrixTable: View {
         // the right, which reads as a header sitting beside another row's values. This
         // band spans the whole width, so the row it covers is covered in both halves.
         .overlay(alignment: .top) {
-            if let header = Self.pinnedHeader(sections: sections, offset: verticalOffset) {
-                clusterHeader(label: header.label, count: header.count)
+            if let header = MatrixLayout.pinnedHeader(sections: sections, offset: verticalOffset) {
+                clusterHeader(label: header.label, count: header.count, kind: "pinned")
                     .allowsHitTesting(false)
             }
         }
         .clipped()
-    }
-
-    /// Which cluster header floats at the top of the pane at a given scroll offset.
-    ///
-    /// Nil while the section's own header is still on screen — its inline copy is doing
-    /// the job, and drawing a second one over it would double the label. Nil also for a
-    /// section with no header, which is what ungrouped rows are.
-    static func pinnedHeader(sections: [MatrixSection], offset: CGFloat)
-        -> (label: String, count: Int)?
-    {
-        var top: CGFloat = 0
-        for section in sections {
-            let headerHeight = section.header == nil ? 0 : Theme.Metrics.headerHeight
-            let height = headerHeight + CGFloat(section.rows.count) * Theme.Metrics.rowHeight
-            if offset < top + height {
-                guard offset > top, let header = section.header else { return nil }
-                return header
-            }
-            top += height
-        }
-        return nil
     }
 
     private var frozenColumn: some View {
@@ -166,7 +206,7 @@ struct MatrixTable: View {
                     }
                 } header: {
                     if let header = section.header {
-                        clusterHeader(label: header.label, count: header.count)
+                        clusterHeader(label: header.label, count: header.count, kind: "cluster")
                     }
                 }
             }
@@ -180,7 +220,7 @@ struct MatrixTable: View {
         MatrixItem.sections(model.items)
     }
 
-    private var environmentColumns: some View {
+    private func environmentColumns(band: CGFloat) -> some View {
         ScrollView(.horizontal) {
             // A VStack, not a LazyVStack. A lazy stack inside a horizontal ScrollView
             // measures each row against the visible width instead of the content width,
@@ -196,11 +236,14 @@ struct MatrixTable: View {
                             .background(.bar)
                     }
                     ForEach(section.rows, id: \.index) { row in
-                        environmentRow(index: row.index, zebra: row.zebra)
+                        environmentRow(index: row.index, zebra: row.zebra, band: band)
                     }
                 }
             }
         }
+        // Exactly the room the frozen pair left. A flexible width here lets the columns
+        // decide how wide the region is, which is how the table outgrows its pane.
+        .frame(width: band)
         .scrollIndicators(.visible)
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.x
@@ -211,7 +254,9 @@ struct MatrixTable: View {
 
     // MARK: Rows
 
-    private func clusterHeader(label: String, count: Int) -> some View {
+    /// One cluster header. `kind` separates the copy pinned at the top of the pane from
+    /// the copy that scrolls with its rows, so a test can tell which one it found.
+    private func clusterHeader(label: String, count: Int, kind: String) -> some View {
         HStack(spacing: 6) {
             Text(label)
                 .font(.caption.weight(.semibold))
@@ -225,6 +270,9 @@ struct MatrixTable: View {
         .frame(height: Theme.Metrics.headerHeight)
         // Opaque, because it is drawn over the rows it scrolls past.
         .background(.bar)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(count) entries")
+        .accessibilityIdentifier("\(kind)-\(label)")
     }
 
     private func frozenRow(index: Int, zebra: Bool, groupLabel: String?) -> some View {
@@ -235,7 +283,9 @@ struct MatrixTable: View {
                 .font(Theme.mono)
                 .foregroundStyle(Theme.color(for: row.state))
                 .frame(width: Theme.Metrics.stateColumn)
+                .accessibilityElement()
                 .accessibilityLabel(stateDescription(row.state))
+                .accessibilityIdentifier("state-cell-\(index)")
             HStack(spacing: 0) {
                 Text(parts.prefix)
                     .foregroundStyle(.secondary)
@@ -245,8 +295,15 @@ struct MatrixTable: View {
             .font(Theme.mono)
             .lineLimit(1)
             .truncationMode(.middle)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // A grouped row drops the prefix its header already shows, and a long name
+            // truncates in the middle. Both draw less than the Entry is called, so the
+            // whole name stays reachable: on hover, and to VoiceOver.
+            .help(row.name)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(row.name)
+            .accessibilityIdentifier("entry-cell-\(index)")
             badge(row.kind)
         }
         .frame(height: Theme.Metrics.rowHeight)
@@ -256,14 +313,16 @@ struct MatrixTable: View {
         }
     }
 
-    private func environmentRow(index: Int, zebra: Bool) -> some View {
+    private func environmentRow(index: Int, zebra: Bool, band: CGFloat) -> some View {
         let row = model.matrix.rows[index]
         return HStack(spacing: 0) {
             ForEach(Array(row.cells.enumerated()), id: \.offset) { col, cell in
                 CellView(
                     cell: cell,
+                    width: columnWidth(band: band),
                     environment: model.matrix.environments[col],
                     entryName: row.name,
+                    identifier: "envcell-\(index)-\(col)",
                     revealedText: revealedText(row: index, col: col),
                     isStaged: model.isStaged(row: index, col: col),
                     canEdit: model.canEdit,
