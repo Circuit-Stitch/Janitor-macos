@@ -1,0 +1,112 @@
+name: CI
+
+# Two things are checked here, and both of them are checks that App Review would
+# otherwise make for us, days later.
+#
+# The first is that a cold clone builds. The repository has no Xcode project in it —
+# XcodeGen generates it — so a runner that has never seen this repository has nothing to
+# build until ci_scripts/ci_post_clone.sh runs. That is the same script Xcode Cloud runs,
+# so running it here is what keeps it working.
+#
+# The second is that the archive still carries the sandbox entitlement. An archive can
+# lose it silently: the build succeeds, the upload succeeds, and review rejects it. The
+# assertion below turns that into a failed build instead.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, test, archive
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # The image carries several Xcode 26 point releases. Pin the newest.
+      # No `| head -1`: SIGPIPE under `set -o pipefail` exits 141 with no output.
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          [ -n "$XCODE" ] || { echo "::error::no Xcode 26 on this image"; exit 1; }
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+          "$XCODE/Contents/Developer/usr/bin/xcodebuild" -version
+
+      # The same script Xcode Cloud runs. It installs XcodeGen and generates the
+      # project, so a clone with no project in it becomes buildable.
+      - name: Generate the Xcode project
+        run: ./ci_scripts/ci_post_clone.sh
+
+      # The entitlements are hand-written and easy to break with a stray XcodeGen key.
+      - name: Check the entitlements file is well formed
+        run: plutil -lint Support/Janitor.entitlements
+
+      - name: Test
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project Janitor.xcodeproj \
+            -scheme Janitor \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Ad-hoc signed, not CODE_SIGNING_ALLOWED=NO. Skipping signing seals no resources
+      # and drops every entitlement, and the Mac App Store requires the sandbox one.
+      # Ad-hoc needs no certificate and no registered device, and keeps them.
+      - name: Archive
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project Janitor.xcodeproj \
+            -scheme Janitor \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$RUNNER_TEMP/Janitor.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            DEVELOPMENT_TEAM= \
+            ENABLE_HARDENED_RUNTIME=YES \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO
+
+      # The archive must carry exactly the three entitlements and no others. A missing
+      # one fails review; an extra one invites a review question that costs a round trip.
+      - name: Assert the entitlement set
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/Janitor.xcarchive/Products/Applications/Janitor.app"
+          codesign -d --entitlements :- "$APP" 2>/dev/null > "$RUNNER_TEMP/entitlements.plist"
+          plutil -p "$RUNNER_TEMP/entitlements.plist"
+
+          for key in app-sandbox network.client network.server; do
+            /usr/libexec/PlistBuddy -c "Print :com.apple.security.$key" \
+              "$RUNNER_TEMP/entitlements.plist" >/dev/null 2>&1 \
+              || { echo "::error::the archive lost com.apple.security.$key"; exit 1; }
+          done
+
+          count="$(plutil -convert json -o - "$RUNNER_TEMP/entitlements.plist" \
+            | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+          [ "$count" = "3" ] \
+            || { echo "::error::expected 3 entitlements, found $count"; exit 1; }
+
+      - name: Upload the build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ${{ runner.temp }}/Janitor.xcarchive/Logs/**
+          retention-days: 7
+          if-no-files-found: ignore

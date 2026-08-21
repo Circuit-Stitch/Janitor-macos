@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Three entitlements, and nothing else. Every one of them was measured against
+	     the real sandbox rather than inferred. Adding a fourth needs a reason written
+	     down here first.
+
+	     The application-identifier and team-identifier entitlements are deliberately
+	     absent. Signing injects them from the provisioning profile. Writing them by
+	     hand pins a team into the repository and breaks an ad-hoc archive. -->
+
+	<!-- The Mac App Store takes sandboxed apps only. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+
+	<!-- Outbound TLS to AWS. Without it connect() returns EPERM and every call fails:
+	     oidc, portal.sso, secretsmanager, ssm, tagging, and the ssmmessages WebSocket.
+	     App Sandbox has no per-host allowlist, so one boolean covers all of them. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+
+	<!-- The loopback listener that receives the OAuth authorization code. Without it
+	     bind(127.0.0.1) returns EPERM and sign-in dies before a browser opens. IAM
+	     Identity Center rejects every redirect URI except a loopback one, so this is
+	     forced by AWS rather than chosen. -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+</dict>
+</plist>

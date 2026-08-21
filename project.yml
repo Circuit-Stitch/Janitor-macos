@@ -1,0 +1,107 @@
+# The source of truth for Janitor.xcodeproj.
+#
+# The project file itself is generated and gitignored. XcodeGen builds it from this
+# file, and ci_scripts/ci_post_clone.sh runs XcodeGen before Xcode Cloud reaches
+# xcodebuild. A fresh clone has no project until that script runs.
+#
+# Run `xcodegen generate` after editing this file.
+
+name: Janitor
+
+options:
+  bundleIdPrefix: com.circuitstitch.apps
+  deploymentTarget:
+    macOS: "15.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: "GDV76FJJZ5"
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_STRICT_CONCURRENCY: complete
+
+    # Xcode 26 defaults new projects to MainActor isolation. The UniFFI-generated
+    # Swift in JanitorKit does not compile under it, and the model here is explicitly
+    # @MainActor where it needs to be. Pin nonisolated so the setting is already
+    # correct when JanitorKit arrives.
+    SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+
+    # The Mac App Store requires both. Hardened runtime defaults to NO on macOS.
+    ENABLE_HARDENED_RUNTIME: YES
+
+targets:
+  Janitor:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        # Set as a build setting rather than via XcodeGen's `entitlements:` key. That
+        # key *generates* the file from a `properties:` block and would overwrite the
+        # hand-written one with an empty plist on every `xcodegen generate`.
+        CODE_SIGN_ENTITLEMENTS: Support/Janitor.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.circuitstitch.apps.janitor
+        PRODUCT_NAME: Janitor
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_PREVIEWS: YES
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+
+    # JanitorKit is not wired up yet. It arrives as a SwiftPM binaryTarget pinned by
+    # URL and checksum once Janitor#104 publishes the xcframework to the depot. Add:
+    #
+    #   packages:
+    #     JanitorKit:
+    #       url: https://github.com/Circuit-Stitch/Janitor-macos   # local path in dev
+    #       ...
+    #   dependencies:
+    #     - package: JanitorKit
+    #
+    # Nothing here runs cargo. Xcode never compiles Rust.
+
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleName: Janitor
+        CFBundleDisplayName: Janitor
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundlePackageType: APPL
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSHumanReadableCopyright: "Janitor is free software under the GNU General Public License v3."
+        # ITSAppUsesNonExemptEncryption is deliberately absent. Janitor bundles
+        # aws-lc-rs, aws-lc-sys, ring, and rustls, so the determination is a legal
+        # statement rather than a default. Janitor#103 decides it.
+
+  JanitorTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/JanitorTests
+    dependencies:
+      - target: Janitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.circuitstitch.apps.janitor.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Janitor:
+    build:
+      targets:
+        Janitor: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - JanitorTests
+    archive:
+      config: Release

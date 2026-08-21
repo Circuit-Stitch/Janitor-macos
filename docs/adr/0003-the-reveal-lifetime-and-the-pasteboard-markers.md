@@ -1,0 +1,78 @@
+# The reveal's lifetime, and the pasteboard markers
+
+**Status:** accepted, 2026-08-21
+
+Adds macOS controls the Slint shell does not have. The
+[threat model](https://github.com/Circuit-Stitch/Janitor/blob/main/docs/THREAT-MODEL.md)
+still states the posture; this records what this shell does about it.
+
+## Context
+
+Two surfaces carry plaintext out of the Rust core: the screen, when a cell is revealed,
+and the pasteboard, when a Value is copied.
+
+The Slint shell reveals on press and hold and clears on release. It has no timeout. It
+copies a Value to the clipboard with no marker and no clear, which means a copied Value
+syncs to the operator's other devices through Universal Clipboard. That was filed as a
+bug against the current shell.
+
+macOS offers controls for both surfaces that the current shell cannot reach.
+
+## Decision
+
+**Exactly one cell reveals, and that is a property of the type.** The model holds
+`revealed: RevealedCell?` — one optional, not a set or a pair of coordinates. There is no
+predicate to widen and no second cell to hold.
+
+**A reveal ends three ways.** On release, which is the gesture. On the window losing key
+status, so plaintext does not sit on a background window while the operator works
+elsewhere. And after ten seconds, because a press whose release never lands — a drag off
+the window, an alert stealing the mouse — otherwise leaves it on screen indefinitely.
+
+**A Value that arrives after the release is dropped.** The model records which cell is
+still held and compares before it paints. A slow round trip cannot flash a Value on
+screen after the gesture ended.
+
+**A revealed cell excludes the window from other processes' screen captures.**
+`NSWindow.sharingType` goes to `.none` while a reveal is live and back to `.readOnly`
+when it ends. The masked matrix is safe to capture, and a permanently unshareable window
+would break screen sharing during ordinary work.
+
+**A revealed Value is read by VoiceOver.** macOS gates third-party accessibility behind
+an explicit permission grant and screen recording behind a separate one. Hiding the
+reveal from one while the other stays open defends nothing, and it would make the feature
+unusable for a blind operator. Masked cells read their shape: the Entry, the Environment,
+the byte length, and the equality group.
+
+**A copied Value carries three markers.** `org.nspasteboard.ConcealedType` and
+`org.nspasteboard.TransientType` are the conventions clipboard managers read to mean "do
+not record this". `com.apple.is-sensitive` is what keeps an item off Universal Clipboard.
+
+**The pasteboard is cleared after 45 seconds, and only if Janitor still owns it.** The
+clear compares the pasteboard's change count against the one Janitor wrote, so a Value
+that aged out is removed without wiping whatever the operator copied since.
+
+**An Entry name is copied plainly and left alone.** A name is metadata, not a Value.
+
+## Correction to the research spec
+
+The research spec named `NSPasteboardTypeTransient` as an AppKit type. It is not one —
+`NSPasteboard.h` in the macOS 26 SDK has no such symbol. All three markers are custom
+types, and two of them are community conventions rather than API.
+
+## Consequences
+
+- **None of the three pasteboard markers is enforced by the operating system.** A
+  clipboard manager that ignores the conventions still records the Value. They are the
+  strongest levers the platform offers, not a guarantee.
+- **`com.apple.is-sensitive` is undocumented.** It is included because it is the only
+  lever for Universal Clipboard and it costs an empty data item. If Apple changes it, the
+  timed clear is still there.
+- **The screen-capture exclusion is measurable, and it makes reveals hard to screenshot
+  during development.** A capture taken while a cell is revealed records the windows
+  behind Janitor rather than Janitor. That is the control working.
+- **The ten-second timeout is a number, not a derived value.** It is short enough that
+  plaintext does not linger and long enough to read a long Value. Change it if operators
+  say otherwise.
+- **The reveal round trip stays asynchronous.** The Value is fetched from the core on
+  press rather than held in the matrix, so the masked matrix never carries plaintext.
