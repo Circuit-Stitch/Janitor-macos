@@ -10,6 +10,13 @@
 //  Rows come from the core already assembled: cluster headers, data rows, zebra
 //  stripes, and which prefix each row's header already shows. This view renders that
 //  list. It does not decide it.
+//
+//  Cluster headers pin. `database.*` stays at the top of the pane while any of its rows
+//  is on screen, so a long cluster never leaves the operator scrolled into unlabeled
+//  rows. Only the frozen half pins, because the label lives there. The two halves stay
+//  aligned through it: a pinned header still occupies its space in the scroll content
+//  and is only repositioned, so the blank band the environment half draws in its place
+//  keeps every row on its own baseline.
 
 import SwiftUI
 
@@ -19,6 +26,8 @@ struct MatrixTable: View {
     @State private var entryWidth = Theme.Metrics.entryColumn
     /// The body's horizontal scroll offset, mirrored onto the header band.
     @State private var horizontalOffset: CGFloat = 0
+    /// The body's vertical scroll offset, which decides which cluster header is pinned.
+    @State private var verticalOffset: CGFloat = 0
 
     private var frozenWidth: CGFloat { Theme.Metrics.stateColumn + entryWidth }
 
@@ -101,34 +110,93 @@ struct MatrixTable: View {
                 environmentColumns
             }
         }
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y
+        } action: { _, offset in
+            verticalOffset = offset
+        }
+        // The pinned cluster header, drawn over both halves.
+        //
+        // `pinnedViews` on the frozen stack would pin only that half. The label would
+        // then cover an Entry name on the left while that row's cells stayed visible on
+        // the right, which reads as a header sitting beside another row's values. This
+        // band spans the whole width, so the row it covers is covered in both halves.
+        .overlay(alignment: .top) {
+            if let header = Self.pinnedHeader(sections: sections, offset: verticalOffset) {
+                clusterHeader(label: header.label, count: header.count)
+                    .allowsHitTesting(false)
+            }
+        }
+        .clipped()
+    }
+
+    /// Which cluster header floats at the top of the pane at a given scroll offset.
+    ///
+    /// Nil while the section's own header is still on screen — its inline copy is doing
+    /// the job, and drawing a second one over it would double the label. Nil also for a
+    /// section with no header, which is what ungrouped rows are.
+    static func pinnedHeader(sections: [MatrixSection], offset: CGFloat)
+        -> (label: String, count: Int)?
+    {
+        var top: CGFloat = 0
+        for section in sections {
+            let headerHeight = section.header == nil ? 0 : Theme.Metrics.headerHeight
+            let height = headerHeight + CGFloat(section.rows.count) * Theme.Metrics.rowHeight
+            if offset < top + height {
+                guard offset > top, let header = section.header else { return nil }
+                return header
+            }
+            top += height
+        }
+        return nil
     }
 
     private var frozenColumn: some View {
         LazyVStack(spacing: 0) {
-            ForEach(Array(model.items.enumerated()), id: \.offset) { _, item in
-                switch item {
-                case .header(let label, let count):
-                    clusterHeader(label: label, count: count)
-                case .row(let index, let zebra, let groupLabel):
-                    frozenRow(index: index, zebra: zebra, groupLabel: groupLabel)
+            ForEach(sections) { section in
+                Section {
+                    // Keyed by the row's index into the matrix, which is unique across
+                    // the whole table. Keying by position within the section repeats
+                    // 0, 1, 2 in every section, and a lazy stack renders only the first
+                    // section that claims them.
+                    ForEach(section.rows, id: \.index) { row in
+                        frozenRow(
+                            index: row.index, zebra: row.zebra, groupLabel: row.groupLabel
+                        )
+                    }
+                } header: {
+                    if let header = section.header {
+                        clusterHeader(label: header.label, count: header.count)
+                    }
                 }
             }
         }
         .frame(width: frozenWidth)
     }
 
+    /// The rendered list, nested into its clusters. A section is what pins; a flat list
+    /// has nothing to pin.
+    private var sections: [MatrixSection] {
+        MatrixItem.sections(model.items)
+    }
+
     private var environmentColumns: some View {
         ScrollView(.horizontal) {
+            // A VStack, not a LazyVStack. A lazy stack inside a horizontal ScrollView
+            // measures each row against the visible width instead of the content width,
+            // and every row collapses to its last cell.
             VStack(spacing: 0) {
-                ForEach(Array(model.items.enumerated()), id: \.offset) { _, item in
-                    switch item {
-                    case .header:
-                        // Keeps the two halves on the same baseline. The label itself
-                        // lives in the frozen half, over the names it groups.
+                ForEach(sections) { section in
+                    if section.header != nil {
+                        // The band the label sits over. It occupies the same space the
+                        // header does in the other half, which is what keeps the two
+                        // halves on the same baseline.
                         Color.clear
                             .frame(height: Theme.Metrics.headerHeight)
-                    case .row(let index, let zebra, _):
-                        environmentRow(index: index, zebra: zebra)
+                            .background(.bar)
+                    }
+                    ForEach(section.rows, id: \.index) { row in
+                        environmentRow(index: row.index, zebra: row.zebra)
                     }
                 }
             }
@@ -153,8 +221,10 @@ struct MatrixTable: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: Theme.Metrics.headerHeight)
-        .background(Color(nsColor: .underPageBackgroundColor))
+        // Opaque, because it is drawn over the rows it scrolls past.
+        .background(.bar)
     }
 
     private func frozenRow(index: Int, zebra: Bool, groupLabel: String?) -> some View {

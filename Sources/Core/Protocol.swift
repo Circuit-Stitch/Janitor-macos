@@ -90,6 +90,41 @@ enum MatrixItem: Sendable, Hashable {
     case row(index: Int, zebra: Bool, groupLabel: String?)
 }
 
+/// One prefix cluster as the table draws it: its header, if it has one, and the rows
+/// under it.
+///
+/// The core decides the clusters. This is the same list nested rather than flat, which is
+/// what a section-pinning stack needs and what a flat list cannot express. Rows that
+/// belong to no cluster arrive as a leading section with no header.
+struct MatrixSection: Identifiable {
+    /// The section's position in the list, which is stable for as long as the list is.
+    var id: Int
+    var header: (label: String, count: Int)?
+    var rows: [(index: Int, zebra: Bool, groupLabel: String?)]
+}
+
+extension MatrixItem {
+    /// Nest a rendered row list into its sections.
+    static func sections(_ items: [MatrixItem]) -> [MatrixSection] {
+        var sections: [MatrixSection] = []
+        for item in items {
+            switch item {
+            case .header(let label, let count):
+                sections.append(
+                    MatrixSection(id: sections.count, header: (label, count), rows: [])
+                )
+            case .row(let index, let zebra, let groupLabel):
+                if sections.isEmpty {
+                    sections.append(MatrixSection(id: 0, header: nil, rows: []))
+                }
+                sections[sections.count - 1].rows
+                    .append((index: index, zebra: zebra, groupLabel: groupLabel))
+            }
+        }
+        return sections
+    }
+}
+
 /// An Entry name split for the two-tone render: a muted prefix up to and including the
 /// last separator, and the bold final segment.
 struct NameParts: Sendable, Hashable {
