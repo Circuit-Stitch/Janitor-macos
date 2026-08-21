@@ -68,8 +68,12 @@ wizard state. Four slices in
 into the core, adding the UniFFI boundary, granting a depot publisher tenant, and
 publishing the framework.
 
-Still to come: the in-matrix cell edit and its confirm-diff dialog, and sticky
-prefix-cluster headers.
+Editing works too, behind the read-write unlock. A cell edit stages into a batch for one
+Environment; the review dialog lists each edit by Entry name and byte count, never by
+Value; and Apply sends the batch through the engine that leaves every Entry it was not
+given alone.
+
+Still to come: the real core behind all of it.
 
 ## Architecture
 
@@ -114,6 +118,9 @@ states them. What this shell adds:
   window becomes shareable again the moment the reveal ends.
 - **A copied Value is marked concealed, transient, and sensitive**, and the pasteboard
   is cleared after 45 seconds if nothing else has claimed it.
+- **A Value being edited is drawn once, concealed**, in the editor that types it. The
+  review dialog, the pending bar, and the log describe an edit by Entry name and byte
+  count. Locking read-write mode again, or quitting, discards whatever was staged.
 - **A revealed Value is read by VoiceOver.** macOS gates third-party accessibility behind
   an explicit permission grant and screen recording behind a separate one, so hiding one
   while the other stays open defends nothing. It would only make the feature unusable for

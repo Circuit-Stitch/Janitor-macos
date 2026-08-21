@@ -34,6 +34,23 @@ struct ContentView: View {
             // Losing key window status ends the reveal.
             if state != .key { model.endReveal() }
         }
+        .sheet(item: $model.editing) { target in
+            EditValueSheet(target: target, model: model)
+        }
+        .sheet(isPresented: $model.reviewing) {
+            ReviewEditsSheet(model: model)
+        }
+        .alert(
+            model.editNotice?.title ?? "",
+            isPresented: Binding(
+                get: { model.editNotice != nil },
+                set: { if !$0 { model.editNotice = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { model.editNotice = nil }
+        } message: {
+            Text(model.editNotice?.message ?? "")
+        }
     }
 
     // MARK: Detail
@@ -44,6 +61,8 @@ struct ContentView: View {
             if let banner = model.banner {
                 ErrorBanner(text: banner)
             }
+
+            PendingEditsBar(model: model)
 
             switch model.pane {
             case .matrix:

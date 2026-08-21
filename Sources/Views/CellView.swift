@@ -22,9 +22,15 @@ struct CellView: View {
     let entryName: String
     /// The plaintext, present only while this cell is the revealed one.
     let revealedText: String?
+    /// Whether this cell has an edit staged, which is drawn rather than described.
+    let isStaged: Bool
+    /// Whether editing is reachable at all. Read-write mode is the gate.
+    let canEdit: Bool
     let onPress: () -> Void
     let onRelease: () -> Void
     let onCopy: () -> Void
+    let onEdit: () -> Void
+    let onRemove: () -> Void
 
     @State private var pressing = false
 
@@ -34,6 +40,7 @@ struct CellView: View {
                    alignment: .leading)
             .padding(.horizontal, 8)
             .contentShape(Rectangle())
+            .background(isStaged ? Theme.drift.opacity(0.18) : .clear)
             .gesture(pressGesture)
             .accessibilityElement()
             .accessibilityLabel(accessibilityLabel)
@@ -96,6 +103,13 @@ struct CellView: View {
         if isPresent {
             Button("Copy Value") { onCopy() }
         }
+        if canEdit {
+            Divider()
+            Button(isPresent ? "Edit Value…" : "Add Value…") { onEdit() }
+            if isPresent {
+                Button("Remove Entry", role: .destructive) { onRemove() }
+            }
+        }
     }
 
     private var isPresent: Bool {
@@ -108,10 +122,14 @@ struct CellView: View {
     private var accessibilityLabel: String {
         switch cell {
         case .absent:
-            "\(entryName) in \(environment): absent"
+            isStaged
+                ? "\(entryName) in \(environment): absent, edit staged"
+                : "\(entryName) in \(environment): absent"
         case .present(let len, _, let hex, _):
             if let revealedText {
                 "\(entryName) in \(environment): \(revealedText)"
+            } else if isStaged {
+                "\(entryName) in \(environment): masked, \(len) bytes, group \(hex), edit staged"
             } else {
                 "\(entryName) in \(environment): masked, \(len) bytes, group \(hex)"
             }

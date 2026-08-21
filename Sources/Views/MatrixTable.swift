@@ -265,9 +265,13 @@ struct MatrixTable: View {
                     environment: model.matrix.environments[col],
                     entryName: row.name,
                     revealedText: revealedText(row: index, col: col),
+                    isStaged: model.isStaged(row: index, col: col),
+                    canEdit: model.canEdit,
                     onPress: { model.beginReveal(row: index, col: col) },
                     onRelease: { model.endReveal() },
-                    onCopy: { model.copyValue(row: index, col: col) }
+                    onCopy: { model.copyValue(row: index, col: col) },
+                    onEdit: { model.beginEdit(row: index, col: col) },
+                    onRemove: { model.stageRemoval(row: index, col: col) }
                 )
             }
         }

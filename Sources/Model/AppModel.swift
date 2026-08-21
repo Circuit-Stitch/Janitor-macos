@@ -51,6 +51,51 @@ struct ManageSession: Sendable, Hashable {
     var advisory: String?
 }
 
+/// Edits typed but not yet sent, for one Environment.
+///
+/// One Environment at a time, because the write engine writes one Set at a time. Staging
+/// across columns would suggest the whole batch commits or fails together, and it would
+/// not.
+///
+/// A `set` edit holds a plaintext Value. It is the longest a Value lives in the shell —
+/// from typing it to applying it — so nothing renders it. The review dialog and the log
+/// both read `summary`, which is Entry name and byte count.
+struct PendingEdits: Sendable {
+    /// The column being edited, for the matrix to mark.
+    var column: Int
+    var environment: String
+    /// Keyed by Entry name, last write wins, so editing the same cell twice stages one
+    /// edit rather than two.
+    var edits: [String: EnvEdit] = [:]
+
+    /// In Entry-name order, so the review dialog reads the same way twice.
+    var ordered: [EnvEdit] {
+        edits.keys.sorted().compactMap { edits[$0] }
+    }
+
+    var count: Int { edits.count }
+}
+
+/// Something the operator asked for that did not happen, and why.
+///
+/// The title matters. "Edit not staged" and "Nothing was written" are different events,
+/// and a batch that is still staged after a refused write reads as lost if the alert says
+/// the wrong one.
+struct EditNotice: Sendable, Hashable {
+    var title: String
+    var message: String
+}
+
+/// The cell whose Value is being typed.
+struct EditTarget: Identifiable, Sendable, Hashable {
+    var row: Int
+    var col: Int
+    var name: String
+    var environment: String
+    /// Both halves, because the same Entry in two Environments is two targets.
+    var id: String { "\(name)@\(environment)" }
+}
+
 /// One line of the Diagnostic Log.
 struct LogLine: Sendable, Hashable, Identifiable {
     enum Level: String, Sendable { case info = "INFO", warn = "WARN", error = "ERROR" }
@@ -109,6 +154,20 @@ final class AppModel {
     /// half-typed URL is never what the next sign-in uses.
     var ssoStartURL = ""
     var ssoRegion = ""
+
+    // MARK: Editing
+
+    /// Edits staged for one Environment, waiting to be reviewed and applied.
+    private(set) var pending: PendingEdits?
+
+    /// What the last edit or write did not do, for the view to show and clear.
+    var editNotice: EditNotice?
+
+    /// The cell whose Value is being typed. Presenting the editor.
+    var editing: EditTarget?
+
+    /// Whether the review dialog is up.
+    var reviewing = false
 
     // MARK: Guards
 
@@ -205,8 +264,128 @@ final class AppModel {
 
     func shutdown() {
         endReveal()
+        discardPending()
         Pasteboard.clearIfOwned()
         core.send(.shutdown)
+    }
+
+    // MARK: Editing
+
+    /// Whether a cell can be edited at all. Read-write mode is the gate the operator
+    /// turns, and the worker holds the real one.
+    var canEdit: Bool { readWrite && status == .loaded }
+
+    /// Open the editor on one cell.
+    func beginEdit(row: Int, col: Int) {
+        guard canEdit, let name = entryName(row: row), let environment = environmentName(col)
+        else { return }
+        // A reveal and an edit on the same cell at once would put the old Value on screen
+        // beside the field for the new one.
+        endReveal()
+        editing = EditTarget(row: row, col: col, name: name, environment: environment)
+    }
+
+    /// Stage a new Value for one cell. The Value is not rendered, not logged, and not
+    /// sent until the operator reviews the batch and applies it.
+    func stageEdit(row: Int, col: Int, value: String) {
+        guard let name = entryName(row: row), let environment = environmentName(col) else {
+            return
+        }
+        guard canEdit else {
+            editNotice = EditNotice(
+                title: "Edit not staged",
+                message: "Read-write mode is off. Turn it on in Settings to edit."
+            )
+            return
+        }
+        guard var batch = batch(for: col, environment: environment) else { return }
+        batch.edits[name] = .set(key: name, value: value)
+        pending = batch
+        note(.info, "staged an edit to \(name)[\(environment)] — \(value.count) bytes")
+    }
+
+    /// Stage the removal of one Entry from one Environment.
+    func stageRemoval(row: Int, col: Int) {
+        guard let name = entryName(row: row), let environment = environmentName(col) else {
+            return
+        }
+        guard canEdit else {
+            editNotice = EditNotice(
+                title: "Edit not staged",
+                message: "Read-write mode is off. Turn it on in Settings to edit."
+            )
+            return
+        }
+        guard var batch = batch(for: col, environment: environment) else { return }
+        batch.edits[name] = .remove(key: name)
+        pending = batch
+        note(.info, "staged a removal of \(name)[\(environment)]")
+    }
+
+    /// Drop one staged edit, by Entry name.
+    func unstage(_ key: String) {
+        guard var batch = pending else { return }
+        batch.edits.removeValue(forKey: key)
+        pending = batch.edits.isEmpty ? nil : batch
+    }
+
+    /// Drop the whole batch. The Values go with it.
+    func discardPending() {
+        guard let batch = pending else { return }
+        pending = nil
+        reviewing = false
+        note(.info, "discarded \(batch.count) staged edit(s) for \(batch.environment)")
+    }
+
+    /// Send the batch. The worker refuses it if the lock is on, without an AWS call.
+    func applyPending() {
+        guard let batch = pending else { return }
+        reviewing = false
+        note(.info, "applying \(batch.count) edit(s) to \(batch.environment)")
+        core.send(.applyEdits(environment: batch.environment, edits: batch.ordered))
+    }
+
+    /// The batch described by Entry name and Value length. This is what the review
+    /// dialog shows and the only description of an edit that leaves the model.
+    var pendingSummary: [String] {
+        guard let batch = pending else { return [] }
+        return core.summarizeEdits(batch.ordered)
+    }
+
+    /// Whether one cell has an edit staged, for the matrix to mark it.
+    func isStaged(row: Int, col: Int) -> Bool {
+        guard let batch = pending, batch.column == col, let name = entryName(row: row) else {
+            return false
+        }
+        return batch.edits[name] != nil
+    }
+
+    /// The batch to add to, or nil when another Environment already has one. A batch
+    /// commits against one Set, so mixing columns would promise an atomicity the engine
+    /// does not have.
+    private func batch(for col: Int, environment: String) -> PendingEdits? {
+        guard let existing = pending else {
+            return PendingEdits(column: col, environment: environment)
+        }
+        guard existing.column == col else {
+            editNotice = EditNotice(
+                title: "Edit not staged",
+                message: """
+                    \(existing.count) edit(s) are already staged for \(existing.environment). \
+                    Apply or discard them before editing \(environment).
+                    """
+            )
+            return nil
+        }
+        return existing
+    }
+
+    private func entryName(row: Int) -> String? {
+        matrix.rows[safe: row]?.name
+    }
+
+    private func environmentName(_ col: Int) -> String? {
+        matrix.environments[safe: col]
     }
 
     // MARK: Applications
@@ -410,6 +589,9 @@ final class AppModel {
         case .readWriteModeChanged(let on):
             readWrite = on
             note(.warn, on ? "read-write mode unlocked" : "read-only mode")
+            // Locking again drops whatever was staged. Keeping Values in memory behind a
+            // lock the operator just closed is the opposite of what they asked for.
+            if !on { discardPending() }
 
         // MARK: Discovery
 
@@ -467,17 +649,35 @@ final class AppModel {
 
         case .writeApplied(let environment):
             note(.info, "\(environment): edits applied")
+            // The batch is spent, and its Values go with it.
+            pending = nil
             // Re-read, so the matrix shows what is now there rather than what was.
             loadSelected()
 
         case .writeConflict(let environment):
+            // The batch is kept. Nothing was overwritten, and a retry should not mean
+            // typing every Value again.
             note(.warn, "\(environment): the set changed under the write — nothing was overwritten")
+            editNotice = EditNotice(
+                title: "Nothing was written",
+                message: "\(environment) changed while the write was in flight. Nothing was "
+                    + "overwritten. Your edits are still staged — refresh and apply again."
+            )
 
         case .writeFailed(let environment, let detail):
             note(.error, "\(environment): write failed — \(detail)")
+            editNotice = EditNotice(
+                title: "Nothing was written",
+                message: "\(environment): \(detail). Your edits are still staged."
+            )
 
         case .writeRefused(let environment):
             note(.warn, "\(environment): write refused — read-write mode is off")
+            editNotice = EditNotice(
+                title: "Nothing was written",
+                message: "The worker refused the write: read-write mode is off. Your edits "
+                    + "are still staged."
+            )
         }
     }
 

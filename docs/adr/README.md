@@ -21,3 +21,4 @@ The two that created this repository:
 | [0003](0003-the-reveal-lifetime-and-the-pasteboard-markers.md) | How long a reveal lives, and what marks a copied Value on the pasteboard. |
 | [0004](0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md) | CI is dispatched to the self-hosted Mac. Release goes through Xcode Cloud. Amended: the self-hosted lane is off, and Xcode Cloud is the only lane. |
 | [0005](0005-manage-is-a-window-settings-is-a-settings-scene.md) | Manage is a real window bound to one Application. Settings is a Settings scene. The wizard's three states are one property. |
+| [0006](0006-editing-a-cell-stages-a-batch-and-the-value-is-never-drawn-twice.md) | A cell edit stages a batch for one Environment. The review dialog shows names and sizes, never Values. |
