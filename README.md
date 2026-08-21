@@ -151,8 +151,10 @@ Run `xcodegen generate` again after editing `project.yml`.
 
 ## CI
 
-There is none right now. `ci.yml` is commented out in full, so nothing in GitHub Actions
-builds this repository.
+There is none right now. `ci.yml` is commented out in full and the workflow is disabled in
+the Actions tab, so nothing in GitHub Actions builds this repository. Both halves are
+needed: GitHub evaluates a workflow file on a push, and an empty one produces a failed run
+rather than no run.
 
 That workflow ran on a self-hosted runner, which is a virtual machine on the development
 Mac. This repository is public, and a public repository should not be wired to that

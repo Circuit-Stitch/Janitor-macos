@@ -1,7 +1,10 @@
 # Disabled 2026-08-21. Nothing in this file runs.
 #
-# Every line below is commented out, the triggers included, so GitHub has no workflow here
-# to schedule or to dispatch.
+# Every line below is commented out, the triggers included. The workflow is also disabled
+# in the Actions tab. Both halves are needed. An empty workflow file is still evaluated on
+# a push, and GitHub records a failed "invalid workflow file" run when it finds nothing to
+# parse — one such run is in this repository's history, from the commit that turned the
+# lane off.
 #
 # The workflow ran on a self-hosted runner. That runner is a virtual machine on the
 # development Mac. This repository is public. Commenting the workflow out is the plain way
@@ -15,11 +18,12 @@
 # three entitlements. Run it by hand before an upload. The Archive step and the "Assert the
 # entitlement set" step below are the recipe, and both work unchanged from a local clone.
 #
-# To re-enable, delete this header and uncomment the rest:
+# To re-enable, uncomment and then re-enable, in that order:
 #
-#     sed -i '' '1,26d; s/^# \{0,1\}//' .github/workflows/ci.yml
+#     sed -i '' '1,30d; s/^# \{0,1\}//' .github/workflows/ci.yml
+#     gh workflow enable ci.yml --repo Circuit-Stitch/Janitor-macos
 #
-# That restores the workflow byte for byte. The runner also needs this repository in the
+# The sed restores the workflow byte for byte. The runner also needs this repository in the
 # apple-builders organization runner group before it will pick a job up. ADR 0004 and its
 # amendment record why the lane went off.
 #

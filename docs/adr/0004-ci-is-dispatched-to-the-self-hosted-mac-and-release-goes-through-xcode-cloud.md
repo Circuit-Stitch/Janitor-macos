@@ -110,6 +110,15 @@ workflow.
 The file is commented rather than deleted. One `sed`, printed in its header, restores it
 byte for byte.
 
+Commenting it out is half the disable. GitHub still evaluates a workflow file on a push,
+and an empty one produces a failed run titled after its path rather than its name. The
+commit that turned the lane off left exactly one of those in the run history. So the
+workflow is disabled in the Actions tab as well:
+
+    gh workflow disable ci.yml --repo Circuit-Stitch/Janitor-macos
+
+Re-enabling takes both halves, in that order: uncomment, then `gh workflow enable`.
+
 Two consequences above are moot while this stands. This repository does not need to join
 the `apple-builders` runner group, and there is nothing to boot before a dispatch.
 
