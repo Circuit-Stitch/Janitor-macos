@@ -6,12 +6,22 @@
 //  the same shapes and this file is deleted — the views and the model above it keep
 //  compiling because they were written against these names.
 //
-//  This slice drives the masked matrix, so it mirrors the 7 commands and 12 events the
-//  matrix needs. The Discovery, write, and update halves of the protocol arrive with
-//  the rest of the surface.
+//  It mirrors 10 of the worker's 12 commands and 21 of its 23 events. The two missing
+//  pairs drive the Windows MSIX updater. A Mac App Store build is updated by the App
+//  Store, so naming them here would be vocabulary the shell can never speak.
 //
-//  Nothing here carries a secret Value except `revealed` and `copyValue`, which carry
-//  the one plaintext crossing.
+//  Field names follow what UniFFI generates from the Rust, not Swift's own
+//  conventions — `accountId`, not `accountID`. This file exists to be deleted, and
+//  matching the generated spelling is what makes deleting it mechanical.
+//
+//  One name deliberately does not match. Rust calls it `Method`, and so will the
+//  generated Swift, but a type named `Method` shadows the Objective-C runtime's `Method`
+//  for this whole module. It compiles, and then tooling resolves the wrong one in any
+//  file that does not see ours. It is `SecretMethod` here, and one typealias reconciles
+//  the two when JanitorKit lands.
+//
+//  Nothing here carries a secret Value except `revealed`, `copyValue`, and an
+//  `EnvEdit.set`. Those three are the plaintext crossings.
 
 import Foundation
 
@@ -104,6 +114,75 @@ enum MainPane: Sendable, Hashable {
     case error
 }
 
+// MARK: - Configuration
+
+/// Which backend holds one Environment's Set. The operator picks it before a walk
+/// starts, so the walk runs that method's steps, and it tags the Environment
+/// afterwards.
+///
+/// Named `Method` in the Rust. See the note at the top of this file for why it is not
+/// named that here.
+enum SecretMethod: Sendable, Hashable, CaseIterable, Identifiable {
+    /// AWS Secrets Manager.
+    case secretsManager
+    /// A remote `.env` on an SSM-managed instance, read over Session Manager.
+    case ssmDotenv
+
+    var id: Self { self }
+}
+
+/// Where one Environment's Set lives. An account, a region, a Set id, a role, and the
+/// method that reaches it. Locations only — this is what Config persists, and it never
+/// holds a Value.
+struct Mapping: Sendable, Hashable, Identifiable {
+    var environment: String
+    var accountId: String
+    var region: String
+    var secretId: String
+    var permissionSet: String
+    var method: SecretMethod
+
+    /// Environment names are unique within an Application — adding a duplicate is
+    /// refused rather than applied — so the name identifies the row.
+    var id: String { environment }
+}
+
+// MARK: - Discovery
+
+/// What a guided walk is asking for. It titles the picker. The shell reads no further
+/// meaning into it.
+enum What: Sendable, Hashable {
+    case accounts
+    case roles
+    case secrets
+    case instances
+    case filePath
+}
+
+// MARK: - Writes
+
+/// One surgical edit to one Environment's Set, keyed by a literal Entry name.
+///
+/// A `set` carries a plaintext Value. It exists for as long as it takes to reach the
+/// core, which holds it in a zeroizing buffer. It is never logged, never rendered, and
+/// never put in view state.
+enum EnvEdit: Sendable {
+    /// Give `key` this Value, replacing what is there or adding the Entry if it is
+    /// missing.
+    case set(key: String, value: String)
+    /// Remove `key` from the Set.
+    case remove(key: String)
+
+    /// The Entry name this edit touches. A name is metadata, so it is safe to show and
+    /// to log.
+    var key: String {
+        switch self {
+        case .set(let key, _): key
+        case .remove(let key): key
+        }
+    }
+}
+
 // MARK: - Failures
 
 /// One Environment's failure. `detail` is scrubbed before it gets here, so it never
@@ -131,6 +210,22 @@ enum JanitorCommand: Sendable {
     /// refuses a write while locked without making any AWS call. Off every launch, and
     /// never persisted.
     case setReadWrite(Bool)
+
+    /// Start a guided walk that fills in one new Environment. The operator supplies the
+    /// name, the method, and the region to browse; the account, the role, and the Set
+    /// are discovered. The walk answers with `discoveryChoice` or `discoveryInput` until
+    /// it reaches `envDiscovered`.
+    case beginDiscovery(method: SecretMethod, environment: String, region: String)
+    /// The operator picked row `choice` of the pending list, and the walk resumes.
+    case advanceDiscovery(choice: Int)
+    /// The operator answered a free-text step, such as a path on a remote host. The text
+    /// is a location, never a Value.
+    case provideInput(String)
+
+    /// Apply edits to one Environment's Set through the non-stomping write engine. The
+    /// worker refuses it while locked, and refuses it before making any AWS call.
+    case applyEdits(environment: String, edits: [EnvEdit])
+
     /// Tear the worker down.
     case shutdown
 }
@@ -170,4 +265,36 @@ enum JanitorEvent: Sendable {
     /// The worker's lock changed. This acknowledges a `setReadWrite`, so the chrome
     /// reflects the real state rather than what the UI asked for.
     case readWriteModeChanged(Bool)
+
+    // MARK: Discovery
+
+    /// A walk finished and produced a Mapping. Where it lands is the shell's to decide,
+    /// and the shell's answer is always the Application the Manage window was opened
+    /// for. The Mapping is locations only.
+    case envDiscovered(mapping: Mapping)
+    /// The walk needs a pick. `labels` are presenter lines — an account, a role, a Set
+    /// name — and `defaultIndex` is the remembered pick to preselect.
+    case discoveryChoice(what: What, labels: [String], defaultIndex: Int?)
+    /// The walk needs typed text. `defaultText` is a remembered answer to prefill.
+    /// Both are locations, never Values.
+    case discoveryInput(what: What, prompt: String, defaultText: String?)
+    /// The walk could not finish. Pre-masked reason.
+    case discoveryFailed(String)
+    /// The SSO token is dead and could not be refreshed. This is not a walk failure:
+    /// the shell routes back to sign-in rather than offering a retry in the wizard.
+    case discoveryReauthRequired
+
+    // MARK: Write outcomes
+
+    /// The compare-and-swap matched and the replace landed. `environment` names the
+    /// column. The edits themselves never appear in an event.
+    case writeApplied(environment: String)
+    /// The Set changed underneath the write and the bounded retries ran out. Nothing
+    /// was overwritten. The operator re-reads and tries again.
+    case writeConflict(environment: String)
+    /// The write failed. `detail` is masked.
+    case writeFailed(environment: String, detail: String)
+    /// The worker refused a write because it is locked, without making an AWS call.
+    /// The shell gates the affordance too, so this is the backstop made visible.
+    case writeRefused(environment: String)
 }

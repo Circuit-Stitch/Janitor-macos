@@ -53,17 +53,23 @@ clipboard cannot.
 
 Early. The shell renders the masked matrix, groups Entry rows by prefix cluster, reveals
 one cell at a time on press and hold, and copies a Value to the pasteboard marked
-concealed. It archives with the sandbox entitlement, and CI asserts that.
+concealed. It archives with the sandbox entitlement.
+
+Applications are managed too. The Manage window adds, renames, and removes them, and its
+guided Discovery wizard fills in a new Environment: the operator types a name and picks a
+method, and the account, the role, and the Set are discovered. Global Settings holds the
+Identity Center fields, the browse-region picker, and the read-write unlock.
 
 It does not read real AWS yet. `JanitorKit.xcframework` — the Rust core compiled for
 macOS — is not published, so the shell runs against `StubCore`, which serves the same
-canned Applications the offline mock Provider serves. Four slices in
+canned Applications the offline mock Provider serves and scripts a walk through every
+wizard state. Four slices in
 [Janitor](https://github.com/Circuit-Stitch/Janitor) gate the swap: moving the worker
 into the core, adding the UniFFI boundary, granting a depot publisher tenant, and
 publishing the framework.
 
-Still to come: the Discovery wizard, the Manage window, Settings, the browse-region
-picker, and the in-matrix cell edit.
+Still to come: the in-matrix cell edit and its confirm-diff dialog, and sticky
+prefix-cluster headers.
 
 ## Architecture
 
@@ -79,7 +85,7 @@ Sources/
     StubCore.swift      canned data, until JanitorKit is published
   Model/
     AppModel.swift      the reducer and every piece of rendering state
-  Views/                the window, the matrix, the cells, the log panel
+  Views/                the windows, the matrix, the cells, the wizard, the log panel
   Platform/
     Pasteboard.swift    concealed and transient markers, and the timed clear
 ```
@@ -125,9 +131,10 @@ Three, and nothing else.
 | `com.apple.security.network.client` | Outbound TLS to AWS. Without it every call fails with EPERM. |
 | `com.apple.security.network.server` | The loopback listener that receives the OAuth code. IAM Identity Center rejects every redirect URI except a loopback one. |
 
-No keychain group, no file exceptions, no hardened-runtime exceptions. CI asserts the
-archive carries these three and only these three, because an archive that loses one
-still builds and uploads, and review rejects it days later.
+No keychain group, no file exceptions, no hardened-runtime exceptions. Check that an
+archive carries these three and only these three before every upload — an archive that
+loses one still builds and uploads, and review rejects it days later. The CI section
+below has the command, and says why it is a manual step.
 
 ## Build and run
 

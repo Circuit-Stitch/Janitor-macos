@@ -1,9 +1,13 @@
 //  JanitorApp.swift
 //  The composition root.
 //
-//  It builds one core, wraps it in one model, and hands that model to the window. The
+//  It builds one core, wraps it in one model, and hands that model to the windows. The
 //  choice of core is the only decision made here, and today there is one to choose
 //  from.
+//
+//  Three scenes. The matrix is the main window. Manage is a second window rather than a
+//  sheet, because it stays bound to one Application while the operator keeps working in
+//  the first. Settings is a `Settings` scene, so it lands where every Mac app puts it.
 
 import SwiftUI
 
@@ -19,6 +23,17 @@ struct JanitorApp: App {
         }
         .defaultSize(width: 1100, height: 700)
         .commands { commands }
+
+        // One Manage window, not a group. The model holds one binding, so a second
+        // window would be a second claim on it.
+        Window("Manage", id: ManageView.windowID) {
+            ManageView(model: model)
+        }
+        .defaultSize(width: 720, height: 520)
+
+        Settings {
+            SettingsView(model: model)
+        }
     }
 
     @CommandsBuilder
@@ -49,6 +64,10 @@ struct JanitorApp: App {
             .keyboardShortcut("l")
         }
 
+        CommandGroup(after: .newItem) {
+            ManageMenuItem(model: model)
+        }
+
         CommandMenu("Secrets") {
             // The deliberate unlock. Janitor ships read-only, the worker enforces it,
             // and this is the one control that asks the worker to change its mind.
@@ -62,5 +81,21 @@ struct JanitorApp: App {
                 .disabled(model.revealed == nil)
             Button("Clear Clipboard") { Pasteboard.clearIfOwned() }
         }
+    }
+}
+
+/// The Manage menu item. It opens the window on the selected Application, which is the
+/// only place the selection decides the binding — from then on the window keeps it.
+private struct ManageMenuItem: View {
+    let model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Manage Application…") {
+            model.openManage(model.selected)
+            openWindow(id: ManageView.windowID)
+        }
+        .keyboardShortcut("m", modifiers: [.command, .shift])
+        .disabled(model.apps.isEmpty)
     }
 }

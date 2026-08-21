@@ -20,3 +20,4 @@ The two that created this repository:
 | [0002](0002-one-seam-to-the-core-and-a-stub-behind-it.md) | One protocol is the whole seam to the core, with a stub behind it until the framework is published. |
 | [0003](0003-the-reveal-lifetime-and-the-pasteboard-markers.md) | How long a reveal lives, and what marks a copied Value on the pasteboard. |
 | [0004](0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md) | CI is dispatched to the self-hosted Mac. Release goes through Xcode Cloud. Amended: the self-hosted lane is off, and Xcode Cloud is the only lane. |
+| [0005](0005-manage-is-a-window-settings-is-a-settings-scene.md) | Manage is a real window bound to one Application. Settings is a Settings scene. The wizard's three states are one property. |

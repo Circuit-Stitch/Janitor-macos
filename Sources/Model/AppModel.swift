@@ -16,6 +16,41 @@ struct RevealedCell: Sendable, Hashable {
     var text: String
 }
 
+/// What the Discovery wizard is asking. The wizard has three question states and they
+/// are mutually exclusive, so they are cases of one property rather than three
+/// properties that have to be kept from overlapping.
+enum DiscoveryState: Sendable, Hashable {
+    /// No walk. The wizard is not shown.
+    case idle
+    /// A walk is between steps.
+    case working(String)
+    /// The walk needs a pick. `defaultIndex` is the remembered one.
+    case choice(prompt: String, labels: [String], defaultIndex: Int?)
+    /// The walk needs typed text, prefilled with `text`. A location, never a Value.
+    case input(prompt: String, text: String)
+    /// The walk ended without a Mapping. Dismissible, so the operator can adjust and
+    /// try again.
+    case terminal(String)
+}
+
+/// One open Manage window, and the Application it is bound to.
+///
+/// The binding is the point. `application` is fixed when the window opens and nothing
+/// about the sidebar changes it. A discovered Environment lands on this index, so it
+/// cannot arrive in whichever Application happens to be selected when the walk
+/// finishes.
+struct ManageSession: Sendable, Hashable {
+    /// The bound Application, by sidebar index.
+    var application: Int
+    /// Its name at the time of the last refresh, for the window title.
+    var name: String
+    var environments: [Mapping]
+    var discovery: DiscoveryState = .idle
+    /// A masked advisory the walk surfaced, such as a read being archived by org-wide
+    /// session logging. It rides alongside the question rather than replacing it.
+    var advisory: String?
+}
+
 /// One line of the Diagnostic Log.
 struct LogLine: Sendable, Hashable, Identifiable {
     enum Level: String, Sendable { case info = "INFO", warn = "WARN", error = "ERROR" }
@@ -59,6 +94,22 @@ final class AppModel {
     }
     var logVisible = false
 
+    // MARK: Manage and Settings
+
+    /// The open Manage window, or nil when none is open.
+    private(set) var manage: ManageSession?
+
+    /// The region the next Discovery walk browses. One value, shown in Settings and
+    /// again beside the add-Environment field, so the two pickers cannot disagree:
+    /// they are the same property.
+    private(set) var browseRegion = ""
+    private(set) var regionChoices: [String] = []
+
+    /// The Identity Center fields, as edited. They are a draft until saved, so a
+    /// half-typed URL is never what the next sign-in uses.
+    var ssoStartURL = ""
+    var ssoRegion = ""
+
     // MARK: Guards
 
     /// The cell whose press is still held. A reveal that arrives when this is nil, or
@@ -77,6 +128,7 @@ final class AppModel {
     init(core: JanitorCore) {
         self.core = core
         rebuildSidebar()
+        rebuildConfig()
         Task { [weak self] in
             for await event in core.events {
                 self?.apply(event)
@@ -90,6 +142,11 @@ final class AppModel {
         core.send(.signIn)
     }
 
+    /// Select an Application in the sidebar.
+    ///
+    /// This deliberately leaves `manage` alone. An open Manage window stays bound to the
+    /// Application it was opened for, so a walk that finishes after the operator has
+    /// moved on still lands where they started it.
     func select(_ index: Int) {
         guard index != selected, index >= 0, index < apps.count else { return }
         selected = index
@@ -150,6 +207,131 @@ final class AppModel {
         endReveal()
         Pasteboard.clearIfOwned()
         core.send(.shutdown)
+    }
+
+    // MARK: Applications
+
+    /// Add an Application and select it. It has no Environments yet, which is what the
+    /// Manage window is for.
+    func addApplication(named name: String) {
+        guard let index = core.addApplication(name: name) else { return }
+        rebuildSidebar()
+        note(.info, "added application \(apps[index].name)")
+        select(index)
+        openManage(index)
+    }
+
+    /// Remove an Application, and close the Manage window if it was the one bound.
+    func removeApplication(at index: Int) {
+        guard index < apps.count else { return }
+        let name = apps[index].name
+        core.removeApplication(index)
+        if manage?.application == index { manage = nil }
+        rebuildSidebar()
+        rebuildConfig()
+        note(.info, "removed application \(name)")
+        if selected >= apps.count { selected = max(0, apps.count - 1) }
+        matrix = .empty
+        items = []
+        loadSelected()
+    }
+
+    // MARK: The Manage window
+
+    /// Open the Manage window on one Application, or rebind an open one to it.
+    ///
+    /// Rebinding on an explicit open is not the same as retargeting on a selection
+    /// change. This is the operator asking for this Application; a sidebar click is not.
+    func openManage(_ index: Int) {
+        guard index >= 0, index < apps.count else { return }
+        manage = ManageSession(
+            application: index,
+            name: apps[index].name,
+            environments: core.environments(of: index)
+        )
+    }
+
+    func closeManage() {
+        manage = nil
+    }
+
+    /// Rename the bound Application. A blank name is refused by the core, so the window
+    /// keeps the name it had.
+    func renameManagedApplication(to name: String) {
+        guard var session = manage else { return }
+        guard core.renameApplication(session.application, to: name) else { return }
+        session.name = core.applications()[safe: session.application]?.name ?? session.name
+        manage = session
+        rebuildSidebar()
+        note(.info, "renamed application to \(session.name)")
+    }
+
+    /// Remove one Environment from the bound Application. This drops a compare column
+    /// and touches no Secret Set.
+    func removeManagedEnvironment(at index: Int) {
+        guard var session = manage else { return }
+        let name = session.environments[safe: index]?.environment ?? ""
+        core.removeEnvironment(application: session.application, index: index)
+        session.environments = core.environments(of: session.application)
+        manage = session
+        rebuildSidebar()
+        note(.info, "removed environment \(name) from \(session.name)")
+        if session.application == selected { loadSelected() }
+    }
+
+    // MARK: Discovery
+
+    /// Start a guided walk for a new Environment on the bound Application.
+    func beginDiscovery(environment: String, method: SecretMethod) {
+        let name = environment.trimmingCharacters(in: .whitespaces)
+        guard var session = manage, !name.isEmpty else { return }
+        session.discovery = .working("Discovering…")
+        session.advisory = nil
+        manage = session
+        core.send(.beginDiscovery(method: method, environment: name, region: browseRegion))
+    }
+
+    /// Send the operator's pick back into the walk.
+    func advanceDiscovery(choice: Int) {
+        guard var session = manage else { return }
+        session.discovery = .working("Discovering…")
+        manage = session
+        core.send(.advanceDiscovery(choice: choice))
+    }
+
+    /// Send the operator's typed answer back into the walk. It is a location, so it is
+    /// safe to log — but there is nothing worth logging in it, so it is not.
+    func provideInput(_ text: String) {
+        guard var session = manage else { return }
+        session.discovery = .working("Discovering…")
+        manage = session
+        core.send(.provideInput(text))
+    }
+
+    /// Dismiss a finished walk's message so the operator can adjust and retry.
+    func dismissDiscovery() {
+        guard var session = manage else { return }
+        session.discovery = .idle
+        session.advisory = nil
+        manage = session
+    }
+
+    // MARK: Settings
+
+    /// Persist the browse region. Both pickers read this back, because both are bound to
+    /// the same property.
+    func setBrowseRegion(_ region: String) {
+        guard region != browseRegion else { return }
+        core.setBrowseRegion(region)
+        rebuildConfig()
+        note(.info, "discovery browses \(browseRegion)")
+    }
+
+    /// Save the Identity Center fields. It takes effect on the next sign-in.
+    func saveIdentityCenter() {
+        core.setIdentityCenter(startURL: ssoStartURL, region: ssoRegion)
+        rebuildConfig()
+        note(.info, "identity center saved — sign in again to use it")
     }
 
     // MARK: Reducer
@@ -217,10 +399,85 @@ final class AppModel {
 
         case .warning(let text):
             note(.warn, text)
+            // An advisory raised during a walk belongs in the wizard too, beside the
+            // question rather than instead of it. With no wizard open the log is the
+            // whole of it.
+            if var session = manage, session.discovery != .idle {
+                session.advisory = text
+                manage = session
+            }
 
         case .readWriteModeChanged(let on):
             readWrite = on
             note(.warn, on ? "read-write mode unlocked" : "read-only mode")
+
+        // MARK: Discovery
+
+        case .envDiscovered(let mapping):
+            // The binding rule. The Mapping lands on the Application the window was
+            // opened for. `selected` is not consulted, so a walk that finishes after the
+            // operator moved on still lands where they started it.
+            guard var session = manage else { return }
+            guard core.addEnvironment(application: session.application, mapping: mapping) else {
+                session.discovery = .terminal(
+                    "\(mapping.environment) already exists in \(session.name)."
+                )
+                manage = session
+                return
+            }
+            session.environments = core.environments(of: session.application)
+            session.discovery = .idle
+            session.advisory = nil
+            manage = session
+            rebuildSidebar()
+            rebuildConfig()
+            note(.info, "added \(mapping.environment) to \(session.name)")
+            if session.application == selected { loadSelected() }
+
+        case .discoveryChoice(let what, let labels, let defaultIndex):
+            guard var session = manage else { return }
+            session.discovery = .choice(
+                prompt: core.choicePrompt(what), labels: labels, defaultIndex: defaultIndex
+            )
+            manage = session
+
+        case .discoveryInput(_, let prompt, let defaultText):
+            guard var session = manage else { return }
+            session.discovery = .input(prompt: prompt, text: defaultText ?? "")
+            manage = session
+
+        case .discoveryFailed(let reason):
+            note(.error, "discovery failed: \(reason)")
+            guard var session = manage else { return }
+            session.discovery = .terminal("Could not add: \(reason)")
+            manage = session
+
+        case .discoveryReauthRequired:
+            // Not a walk failure. The session is gone, so the whole window goes back to
+            // sign-in rather than offering a retry inside the wizard.
+            status = .failed
+            banner = "Session expired — sign in again."
+            note(.error, "session expired during discovery")
+            if var session = manage {
+                session.discovery = .terminal("Session expired — sign in again.")
+                manage = session
+            }
+
+        // MARK: Write outcomes
+
+        case .writeApplied(let environment):
+            note(.info, "\(environment): edits applied")
+            // Re-read, so the matrix shows what is now there rather than what was.
+            loadSelected()
+
+        case .writeConflict(let environment):
+            note(.warn, "\(environment): the set changed under the write — nothing was overwritten")
+
+        case .writeFailed(let environment, let detail):
+            note(.error, "\(environment): write failed — \(detail)")
+
+        case .writeRefused(let environment):
+            note(.warn, "\(environment): write refused — read-write mode is off")
         }
     }
 
@@ -241,6 +498,21 @@ final class AppModel {
         core.stateGlyph(state)
     }
 
+    /// The short method tag on an Environment row.
+    func methodLabel(_ method: SecretMethod) -> String {
+        core.methodLabel(method)
+    }
+
+    /// The full method name, for the picker that chooses one before a walk.
+    func methodName(_ method: SecretMethod) -> String {
+        core.methodName(method)
+    }
+
+    /// A pending edit, described by Entry name and Value length.
+    func summarizeEdits(_ edits: [EnvEdit]) -> [String] {
+        core.summarizeEdits(edits)
+    }
+
     /// Which main pane to show.
     var pane: MainPane {
         core.mainPane(status: status, hasApplications: !apps.isEmpty)
@@ -259,6 +531,16 @@ final class AppModel {
 
     private func rebuildItems() {
         items = core.matrixItems(names: matrix.rows.map(\.name), grouped: grouped)
+    }
+
+    /// Re-read the parts of Config the windows show. Config is the core's, so this is a
+    /// read rather than a cache: the model holds the last answer, never its own copy.
+    private func rebuildConfig() {
+        regionChoices = core.regionChoices()
+        browseRegion = core.browseRegion()
+        let identity = core.identityCenter()
+        ssoStartURL = identity.startURL
+        ssoRegion = identity.region
     }
 
     private func rebuildSidebar() {

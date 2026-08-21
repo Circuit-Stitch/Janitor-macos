@@ -57,11 +57,13 @@ already declares and what Circuit Stitch applications use.
 ## Consequences
 
 - **The generated project is not in the repository, so a clone cannot be opened
-  directly.** `xcodegen generate` comes first. The README says so, and CI proves a cold
-  clone reaches an archive.
-- **CI asserts the entitlement set, not just its presence.** It checks all three keys and
-  that the count is exactly three. An archive with a fourth entitlement invites a review
-  question that costs a round trip, and an archive missing one is rejected days later.
+  directly.** `xcodegen generate` comes first. The README says so, and Xcode Cloud proves
+  a cold clone reaches an archive on every release build.
+- **The entitlement set is asserted, not just its presence.** All three keys, and the
+  count exactly three. An archive with a fourth entitlement invites a review question
+  that costs a round trip, and an archive missing one is rejected days later. This ran in
+  CI when it was written. ADR 0004's amendment turned that lane off, so it is a manual
+  check before an upload until something else carries it.
 - **macOS 14 is not supported.** macOS 15 shipped in September 2024, and Janitor is a
   developer tool, so the floor is not a real constraint. Dropping to 14 means writing the
   scroll-offset plumbing by hand.

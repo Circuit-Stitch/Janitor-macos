@@ -14,6 +14,12 @@
 //     the error banner. The shell calls them. Reimplementing any of them in Swift would
 //     move a tested rule into an untested layer.
 //
+//  A third half sits beside them: the Config surface. Config holds locations and view
+//  preferences, never a Value, and the core owns it. The Manage and Settings windows
+//  read and write it through these calls rather than keeping a copy, so there is one
+//  answer to what is configured and the shell is never the place a Mapping is
+//  assembled.
+//
 //  There is one implementation today: `StubCore`, which serves canned data so the views
 //  can be built and tested before the xcframework exists. `JanitorKitCore` joins it and
 //  `StubCore` becomes a test fixture.
@@ -46,9 +52,55 @@ protocol JanitorCore: AnyObject, Sendable {
     /// Send a command. Returns immediately.
     func send(_ command: JanitorCommand)
 
-    /// The Applications configured on disk, in sidebar order. Config holds locations
-    /// only — never a Value.
+    // MARK: Config
+
+    // Config holds locations and preferences, never a Value. Every call here is
+    // synchronous: it reads or writes a file the core already has open, and it makes no
+    // network call.
+
+    /// The Applications configured on disk, in sidebar order.
     func applications() -> [(name: String, environmentCount: Int)]
+
+    /// One Application's Environments, in column order. Empty for an index that is out
+    /// of range, so a Manage window bound to an Application that was removed elsewhere
+    /// renders empty rather than trapping.
+    func environments(of application: Int) -> [Mapping]
+
+    /// Add an Application with no Environments and return its index. A blank name is
+    /// refused and returns nil.
+    @discardableResult
+    func addApplication(name: String) -> Int?
+
+    /// Remove an Application and everything mapped under it.
+    func removeApplication(_ index: Int)
+
+    /// Rename an Application. A blank name is refused, so a stray Return cannot erase
+    /// one. Returns whether the name changed.
+    @discardableResult
+    func renameApplication(_ index: Int, to name: String) -> Bool
+
+    /// Append a discovered Environment to one Application. An Environment name already
+    /// present is refused rather than overwritten — overwriting one would silently
+    /// retarget a compare column at a different Secret Set. Returns whether it landed.
+    @discardableResult
+    func addEnvironment(application: Int, mapping: Mapping) -> Bool
+
+    /// Remove one Environment from one Application. This drops a compare column; it
+    /// touches no Secret Set.
+    func removeEnvironment(application: Int, index: Int)
+
+    /// The regions the browse picker offers: the known commercial regions, plus every
+    /// region this operator already refers to, so their own region is always present.
+    func regionChoices() -> [String]
+
+    /// The region the next Discovery walk browses. One sticky value, shown in two
+    /// places.
+    func browseRegion() -> String
+    func setBrowseRegion(_ region: String)
+
+    /// The Identity Center start URL and the region that hosts it.
+    func identityCenter() -> (startURL: String, region: String)
+    func setIdentityCenter(startURL: String, region: String)
 
     // MARK: Pure rules, decided in Rust
 
@@ -78,4 +130,17 @@ protocol JanitorCore: AnyObject, Sendable {
     func mainPane(status: LoadStatus, hasApplications: Bool) -> MainPane
     func paneTitle(_ pane: MainPane) -> String
     func paneBody(_ pane: MainPane, statusMessage: String?) -> String
+
+    /// The question above a Discovery picker, for what the walk is asking.
+    func choicePrompt(_ what: What) -> String
+
+    /// The short method tag on an Environment row.
+    func methodLabel(_ method: SecretMethod) -> String
+
+    /// The full method name, for the picker that chooses one before a walk.
+    func methodName(_ method: SecretMethod) -> String
+
+    /// A pending edit described by Entry name and Value length. The length is what makes
+    /// a confirm dialog reviewable without putting the new Value on screen.
+    func summarizeEdits(_ edits: [EnvEdit]) -> [String]
 }
