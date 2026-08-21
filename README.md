@@ -149,18 +149,34 @@ xcodebuild test -project Janitor.xcodeproj -scheme Janitor \
 
 Run `xcodegen generate` again after editing `project.yml`.
 
+## CI
+
+`ci.yml` runs on the self-hosted macOS runner, on `workflow_dispatch` and a nightly
+schedule. It builds, tests, archives, and asserts the archive carries exactly the three
+entitlements.
+
+It does not trigger on push. The runner is a virtual machine on the development Mac and
+is started by hand, so a push-triggered job would queue until somebody booted it, and
+GitHub cancels a queued job after a day. It does not trigger on pull requests either:
+this repository is public, and a fork pull request on a self-hosted runner runs a
+stranger's code on that Mac. [ADR 0004](docs/adr/0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md)
+records both.
+
+Boot the guest before dispatching: `~/Code/deferno-runner/macos/ship.sh`.
+
 ## Release
 
 Xcode Cloud builds, signs, and uploads. It owns the certificates, the provisioning
-profile, and the App Store Connect key, so none of them are in this repository.
+profile, and the App Store Connect key, so none of them are in this repository. There is
+no release lane in GitHub Actions.
 
 It runs no cargo. The Rust arrives as a prebuilt `JanitorKit.xcframework` from the
 depot, pinned by URL and checksum. Building the core on every run would compile the AWS
 SDK and a large C library from cold each time, with no cache.
 
 `ci_scripts/ci_post_clone.sh` runs first and regenerates the Xcode project. Without it a
-fresh clone has nothing to build. GitHub Actions runs the same script, which is what
-keeps it working.
+fresh clone has nothing to build. The CI lane runs the same script, which is what keeps
+it working.
 
 ## License
 

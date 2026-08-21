@@ -1,26 +1,40 @@
+# Build, test, and archive on the self-hosted macOS runner.
+#
+# Two things are checked, and both are checks App Review would otherwise make for us, days later.
+#
+# The first is that a cold clone builds. The repository has no Xcode project in it — XcodeGen
+# generates it — so a runner that has never seen this repository has nothing to build until
+# ci_scripts/ci_post_clone.sh runs. That is the same script Xcode Cloud runs, so running it here is
+# what keeps it working.
+#
+# The second is that the archive still carries the sandbox entitlement. An archive can lose it
+# silently: the build succeeds, the upload succeeds, and review rejects it. The assertion below
+# turns that into a failed build instead.
+#
+# This workflow does not release. Xcode Cloud builds, signs, and uploads to App Store Connect, and
+# it holds the certificates and the App Store Connect key. There is no release lane here.
+#
+# It does not trigger on push, for two reasons that both matter. The runner is a Tart VM on the
+# development Mac and is started by hand, so a push-triggered job would sit queued until somebody
+# booted it — and GitHub cancels a queued job after twenty-four hours. A gate that reports nothing
+# is worse than no gate. And the runner is safe to point at this repository only while the
+# workflows reaching it are dispatched rather than triggered by contributed code. This repository
+# is public, so a fork pull request is not hypothetical here. WirelessOrderTelegraph-kmp's ADR-0010
+# records both reasons at length.
+#
+# Boot the guest before dispatching:  ~/Code/deferno-runner/macos/ship.sh
 name: CI
 
-# Two things are checked here, and both of them are checks that App Review would
-# otherwise make for us, days later.
-#
-# The first is that a cold clone builds. The repository has no Xcode project in it —
-# XcodeGen generates it — so a runner that has never seen this repository has nothing to
-# build until ci_scripts/ci_post_clone.sh runs. That is the same script Xcode Cloud runs,
-# so running it here is what keeps it working.
-#
-# The second is that the archive still carries the sandbox entitlement. An archive can
-# lose it silently: the build succeeds, the upload succeeds, and review rejects it. The
-# assertion below turns that into a failed build instead.
-
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
+  # Nightly, so a break is found within a day rather than at the next release. It runs only if the
+  # guest happens to be up; a skipped night is not a failure.
+  schedule:
+    - cron: "0 9 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -28,24 +42,36 @@ permissions:
 jobs:
   build:
     name: Build, test, archive
-    runs-on: macos-26
+    # The label is inherited from when this runner served deferno-kmp alone.
+    #
+    # This repository must be added to the `apple-builders` organisation runner group before the
+    # job can be picked up. Without it the run queues and is cancelled after twenty-four hours.
+    runs-on: [self-hosted, macOS, ARM64, deferno-ios]
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      # The image carries several Xcode 26 point releases. Pin the newest.
-      # No `| head -1`: SIGPIPE under `set -o pipefail` exits 141 with no output.
-      - name: Select Xcode 26
+      # The guest carries Xcode as /Applications/Xcode_26.x.app. Pick the newest 26 and hand it to
+      # every later step. Failing here is much cheaper than failing inside a build.
+      #
+      # No `| head -1`. head exits after the first line, the producer takes SIGPIPE writing the
+      # second, and `set -o pipefail` turns that into exit 141 — which aborts the step printing
+      # nothing at all. It is a race, so it fails intermittently. sort/tail read to EOF.
+      - name: Select Xcode
         run: |
           set -euo pipefail
           XCODE="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
-          [ -n "$XCODE" ] || { echo "::error::no Xcode 26 on this image"; exit 1; }
+          if [ -z "$XCODE" ]; then
+            echo "::error::no Xcode 26 on this runner — install with: xcodes install 26.6 --select"
+            exit 1
+          fi
           echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
           "$XCODE/Contents/Developer/usr/bin/xcodebuild" -version
 
-      # The same script Xcode Cloud runs. It installs XcodeGen and generates the
-      # project, so a clone with no project in it becomes buildable.
+      # The same script Xcode Cloud runs. On this runner XcodeGen is already installed, so the
+      # script skips the brew step and only generates.
       - name: Generate the Xcode project
         run: ./ci_scripts/ci_post_clone.sh
 
@@ -62,9 +88,9 @@ jobs:
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO
 
-      # Ad-hoc signed, not CODE_SIGNING_ALLOWED=NO. Skipping signing seals no resources
-      # and drops every entitlement, and the Mac App Store requires the sandbox one.
-      # Ad-hoc needs no certificate and no registered device, and keeps them.
+      # Ad-hoc signed, not CODE_SIGNING_ALLOWED=NO. Skipping signing seals no resources and drops
+      # every entitlement, and the Mac App Store requires the sandbox one. Ad-hoc needs no
+      # certificate and no registered device, and keeps them.
       - name: Archive
         run: |
           set -euo pipefail
@@ -82,8 +108,8 @@ jobs:
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=NO
 
-      # The archive must carry exactly the three entitlements and no others. A missing
-      # one fails review; an extra one invites a review question that costs a round trip.
+      # The archive must carry exactly the three entitlements and no others. A missing one fails
+      # review; an extra one invites a review question that costs a round trip.
       - name: Assert the entitlement set
         run: |
           set -euo pipefail
@@ -110,3 +136,9 @@ jobs:
           path: ${{ runner.temp }}/Janitor.xcarchive/Logs/**
           retention-days: 7
           if-no-files-found: ignore
+
+      # The runner is persistent, so DerivedData and the archive survive between jobs. The archive
+      # is the large one and nothing reads it after this run.
+      - name: Clean up the archive
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/Janitor.xcarchive"
