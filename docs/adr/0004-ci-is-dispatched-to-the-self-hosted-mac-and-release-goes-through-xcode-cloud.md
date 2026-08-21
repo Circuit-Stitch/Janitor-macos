@@ -1,6 +1,8 @@
 # CI is dispatched to the self-hosted Mac, and release goes through Xcode Cloud
 
-**Status:** accepted, 2026-08-21
+**Status:** accepted, 2026-08-21; **the self-hosted lane was turned off 2026-08-21**
+(see the amendment at the end — `ci.yml` is commented out, and Xcode Cloud is the only
+lane).
 
 Follows
 [ADR 0035](https://github.com/Circuit-Stitch/Janitor/blob/main/docs/adr/0035-swiftui-macos-shell-over-uniffi.md),
@@ -86,3 +88,30 @@ keeps the Xcode Cloud path exercised.
   a maintainer dispatching a run after reading it.
 - **Revisit if the runner becomes a service rather than a hand-started VM.** Push on
   `main` becomes reasonable the moment a queued job is no longer the normal case.
+
+## Amendment (2026-08-21): the self-hosted lane is off
+
+`ci.yml` is commented out in full. Nothing in GitHub Actions builds this repository.
+
+The Decision rested on keeping contributed code away from the runner by choosing the
+triggers carefully. `workflow_dispatch` and `schedule` do that. The objection is broader.
+A public repository should not be wired to a virtual machine on the development Mac at
+all. One repository setting, or one careless trigger added later, is the whole distance
+between the safe arrangement and a stranger's code on that machine.
+
+Xcode Cloud is the only lane now. It builds, signs, and uploads. It runs
+`ci_scripts/ci_post_clone.sh` first, so a cold clone is still proven to reach an archive
+on every release build.
+
+The entitlement assertion is what goes uncovered — all three present, and the count
+exactly three. Run it by hand before an upload. The steps survive in the commented
+workflow.
+
+The file is commented rather than deleted. One `sed`, printed in its header, restores it
+byte for byte.
+
+Two consequences above are moot while this stands. This repository does not need to join
+the `apple-builders` runner group, and there is nothing to boot before a dispatch.
+
+Revisit when the runner stops being a virtual machine on the development Mac, or when a
+hosted macOS runner is worth its cost.

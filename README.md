@@ -151,18 +151,26 @@ Run `xcodegen generate` again after editing `project.yml`.
 
 ## CI
 
-`ci.yml` runs on the self-hosted macOS runner, on `workflow_dispatch` and a nightly
-schedule. It builds, tests, archives, and asserts the archive carries exactly the three
-entitlements.
+There is none right now. `ci.yml` is commented out in full, so nothing in GitHub Actions
+builds this repository.
 
-It does not trigger on push. The runner is a virtual machine on the development Mac and
-is started by hand, so a push-triggered job would queue until somebody booted it, and
-GitHub cancels a queued job after a day. It does not trigger on pull requests either:
-this repository is public, and a fork pull request on a self-hosted runner runs a
-stranger's code on that Mac. [ADR 0004](docs/adr/0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md)
-records both.
+That workflow ran on a self-hosted runner, which is a virtual machine on the development
+Mac. This repository is public, and a public repository should not be wired to that
+machine. Xcode Cloud is the only lane now.
+[ADR 0004](docs/adr/0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md)
+and its amendment record the decision. The workflow's own header holds the one-line `sed`
+that brings it back.
 
-Boot the guest before dispatching: `~/Code/deferno-runner/macos/ship.sh`.
+Two checks it made are yours to run until then. The tests, with the `xcodebuild test`
+command above. And the entitlement set, after an archive:
+
+```bash
+codesign -d --entitlements :- path/to/Janitor.app
+```
+
+Exactly three must be there: `com.apple.security.app-sandbox`,
+`com.apple.security.network.client`, and `com.apple.security.network.server`. A missing one
+fails review. An extra one costs a review round trip.
 
 ## Release
 
@@ -175,8 +183,8 @@ depot, pinned by URL and checksum. Building the core on every run would compile 
 SDK and a large C library from cold each time, with no cache.
 
 `ci_scripts/ci_post_clone.sh` runs first and regenerates the Xcode project. Without it a
-fresh clone has nothing to build. The CI lane runs the same script, which is what keeps
-it working.
+fresh clone has nothing to build. Xcode Cloud is now its only automated caller, so run it
+by hand from a clean clone before a release to check it still works.
 
 ## License
 
