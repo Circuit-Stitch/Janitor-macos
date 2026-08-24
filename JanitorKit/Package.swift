@@ -41,12 +41,11 @@
 import Foundation
 import PackageDescription
 
-// The checksum below is from a local run of scripts/build-xcframework.sh. A CI build is
-// not byte-identical to a local one, so replace it with the number the publish workflow
-// prints for the tag. Until Janitor#104 publishes, JANITORKIT_LOCAL=1 is the only route
-// that resolves.
+// Published from tag kit-v0.1.0 in Circuit-Stitch/Janitor. The checksum is what that
+// run printed, and the depot serves the same value beside the zip as
+// JanitorKit.xcframework.zip.sha256.
 let version = "0.1.0"
-let checksum = "9fe6a74be8bb8822d41c4e0ab5e69f082a814eda2386c195d074705c5c45521d"
+let checksum = "e60bf5e5cfa22cffe8b730bfa12fc22975dded78d62105a479957ebae9eaeeb3"
 
 let local = ProcessInfo.processInfo.environment["JANITORKIT_LOCAL"] == "1"
 
