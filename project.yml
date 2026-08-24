@@ -48,6 +48,11 @@ targets:
     platform: macOS
     sources:
       - path: Sources
+      # The third-party notices the Acknowledgments window reads. Generated in the
+      # core repository and committed here with the JanitorKit version, because
+      # nothing in this build can enumerate what the framework links (ADR 0008).
+      - path: Support/THIRD-PARTY-LICENSES.txt
+        buildPhase: resources
     settings:
       base:
         # Set as a build setting rather than via XcodeGen's `entitlements:` key. That
@@ -77,7 +82,10 @@ targets:
         CFBundlePackageType: APPL
         LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
         LSApplicationCategoryType: public.app-category.developer-tools
-        NSHumanReadableCopyright: "Janitor is free software under the GNU General Public License v3."
+        # Finder's Get Info panel and the About window both read this. It carries
+        # the copyright only: the About window states the license itself, and
+        # saying it twice there would read as a mistake.
+        NSHumanReadableCopyright: "Copyright © 2026 Circuit Stitch"
         # ITSAppUsesNonExemptEncryption is deliberately absent. Janitor bundles
         # aws-lc-rs, aws-lc-sys, ring, and rustls, so the determination is a legal
         # statement rather than a default. Janitor#103 decides it.

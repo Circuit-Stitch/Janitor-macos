@@ -51,6 +51,23 @@ struct JanitorApp: App {
         }
         .defaultSize(width: 720, height: 520)
 
+        // About replaces the standard AppKit panel, which has nowhere to put the
+        // publisher mark, the license, and a way through to the notices. It is sized by
+        // its content and takes no toolbar, so it reads as a panel rather than a window.
+        Window("About Janitor", id: AboutView.windowID) {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+        .restorationBehavior(.disabled)
+
+        // The third-party notices. Its own window because the list runs to thousands of
+        // lines and needs room to be read and searched.
+        Window("Acknowledgments", id: AcknowledgmentsView.windowID) {
+            AcknowledgmentsView()
+        }
+        .defaultSize(width: 680, height: 520)
+
         Settings {
             SettingsView(model: model)
         }
@@ -76,6 +93,13 @@ struct JanitorApp: App {
 
     @CommandsBuilder
     private var commands: some Commands {
+        // Janitor draws its own About window, so the menu item has to point at it. Left
+        // alone, this item calls orderFrontStandardAboutPanel and the custom window is
+        // unreachable.
+        CommandGroup(replacing: .appInfo) {
+            AboutMenuItem()
+        }
+
         // The New Item group is where a document-based app puts New and Open. Janitor
         // opens no documents, so it is replaced rather than left showing menu items
         // that do nothing.
@@ -119,6 +143,16 @@ struct JanitorApp: App {
                 .disabled(model.revealed == nil)
             Button("Clear Clipboard") { Pasteboard.clearIfOwned() }
         }
+    }
+}
+
+/// The About menu item. A `Commands` builder has no environment of its own, so the one
+/// thing this view exists for is to reach `openWindow`.
+private struct AboutMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("About Janitor") { openWindow(id: AboutView.windowID) }
     }
 }
 

@@ -23,3 +23,4 @@ The two that created this repository:
 | [0005](0005-manage-is-a-window-settings-is-a-settings-scene.md) | Manage is a real window bound to one Application. Settings is a Settings scene. The wizard's three states are one property. |
 | [0006](0006-editing-a-cell-stages-a-batch-and-the-value-is-never-drawn-twice.md) | A cell edit stages a batch for one Environment. The review dialog shows names and sizes, never Values. |
 | [0007](0007-the-slint-view-tests-become-two-lanes.md) | The Slint view tests become layout arithmetic in `MatrixLayout` and XCUITest against the running app. |
+| [0008](0008-the-about-window-and-where-the-notices-come-from.md) | Janitor draws its own About window. The third-party notices are generated in the core and travel with the framework. |

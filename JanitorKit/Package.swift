@@ -34,9 +34,19 @@
 //   1. Tag kit-v<version> in Circuit-Stitch/Janitor.
 //   2. The publish workflow prints the checksum of the bytes it published.
 //   3. Put the version and that checksum below, and commit.
+//   4. Fetch the notices published beside the zip and commit them too:
+//
+//        curl -fsSL -o ../Support/THIRD-PARTY-LICENSES.txt \
+//          https://depot.circuitstitch.com/open/swift/janitor/<version>/THIRD-PARTY-LICENSES.txt
 //
 // A version is published once and never overwritten, so the two lines below describe
 // exactly one sequence of bytes forever.
+//
+// Step 4 is not optional. The Acknowledgments window states what this app links, and
+// this build compiles no Rust and has no Cargo.lock, so nothing here can check that
+// claim. A stale file makes the app assert attribution for a dependency set it no
+// longer carries. The notices are published under the same immutable key as the zip,
+// so the two are pinned together (ADR 0008).
 
 import Foundation
 import PackageDescription

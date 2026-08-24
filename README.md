@@ -44,6 +44,9 @@ forbids the further restrictions the App Store terms impose. There was no Xcode 
 and the upload needs one. The App Store requires App Sandbox, which breaks the loopback
 OAuth listener.
 
+The license half is settled. Dropping Slint took Slint's GPL out of this build, and the
+core then relicensed to Apache-2.0, because nothing in it ever depended on Slint.
+
 A native shell answers all three, and two of the answers make the app better.
 `ASWebAuthenticationSession` gives an ephemeral sign-in that isolates the Identity Center
 portal cookie. `NSPasteboard` can mark a copied Value concealed, which the current
@@ -239,7 +242,24 @@ by hand from a clean clone before a release to check it still works.
 
 ## License
 
-[GPL-3.0-only](LICENSE), following the core it is built on. The license is under review
-in [Janitor#102](https://github.com/Circuit-Stitch/Janitor/issues/102): dropping Slint
-removed the cause of the GPL, not the license itself, and the xcframework is still
-compiled from GPL crates.
+[Apache-2.0](LICENSE), following the core it is built on. Copyright 2026 Circuit Stitch.
+
+GPLv3 blocked the App Store, so the core relicensed
+([Janitor ADR 0037](https://github.com/Circuit-Stitch/Janitor/blob/main/docs/adr/0037-apache-2-0-replaces-gpl-3-0-only.md)).
+Slint was never the cause for the core: it reaches only the Slint shell, and nothing
+depends on that shell. `JanitorKit.xcframework` carries no Slint and no GPL crate.
+
+The Slint shell in
+[Janitor-slint](https://github.com/Circuit-Stitch/Janitor-slint) stays GPL-3.0-only,
+because it does link Slint.
+
+### Third-party notices
+
+Janitor links 272 open-source packages, all permissive apart from one MPL-2.0 crate.
+Their notices are in [Support/THIRD-PARTY-LICENSES.txt](Support/THIRD-PARTY-LICENSES.txt)
+and the app shows them in its Acknowledgments window.
+
+This build compiles no Rust, so it cannot work out what it links. The file is generated
+from `Cargo.lock` in the core repository, published beside the framework zip, and
+committed here whenever the JanitorKit version is bumped. See
+[ADR 0008](docs/adr/0008-the-about-window-and-where-the-notices-come-from.md).
