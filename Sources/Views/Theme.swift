@@ -9,6 +9,7 @@
 //  distinguishable, and each one is paired with a glyph, so the reading never depends
 //  on color alone.
 
+import JanitorKit
 import SwiftUI
 
 enum Theme {
@@ -19,11 +20,17 @@ enum Theme {
     /// Missing somewhere. The highest-signal finding.
     static let gap = Color.red
 
+    /// A state's color.
+    ///
+    /// The `@unknown default` is not defensive padding. `EntryState` comes from a
+    /// library-evolution module, so Swift treats it as able to gain a case, and a
+    /// glyph-less gray is the safe thing to draw for one this build has never heard of.
     static func color(for state: EntryState) -> Color {
         switch state {
         case .aligned: aligned
         case .drift: drift
         case .gap: gap
+        @unknown default: Color.secondary
         }
     }
 

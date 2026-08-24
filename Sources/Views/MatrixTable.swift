@@ -28,6 +28,7 @@
 //  and is only repositioned, so the blank band the environment half draws in its place
 //  keeps every row on its own baseline.
 
+import JanitorKit
 import SwiftUI
 
 struct MatrixTable: View {
@@ -366,6 +367,7 @@ struct MatrixTable: View {
         case .aligned: "Aligned"
         case .drift: "Drift"
         case .gap: "Gap"
+        @unknown default: "Unknown"
         }
     }
 }

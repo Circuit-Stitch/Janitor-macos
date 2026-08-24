@@ -9,6 +9,7 @@
 //  wrong Application silently retargets a compare column at a different Secret Set, and
 //  nothing about the matrix afterwards would look wrong.
 
+import JanitorKit
 import Testing
 @testable import Janitor
 
@@ -38,7 +39,7 @@ struct ManageTests {
 
         // The operator moves on while the walk runs.
         model.select(1)
-        model.apply(.envDiscovered(mapping: mapping("qa")))
+        model.apply(.envDiscovered(mapping("qa")))
 
         #expect(model.manage?.application == 0)
         #expect(model.manage?.environments.map(\.environment).contains("qa") == true)
@@ -74,7 +75,7 @@ struct ManageTests {
     @Test("a Mapping arriving with no open window is dropped")
     func discoveryWithNoBoundWindowIsDropped() {
         let model = model()
-        model.apply(.envDiscovered(mapping: mapping("qa")))
+        model.apply(.envDiscovered(mapping("qa")))
 
         #expect(model.manage == nil)
         #expect(model.apps[0].subtitle == "2 envs")
@@ -86,7 +87,7 @@ struct ManageTests {
         model.openManage(0)
         let before = model.manage?.environments.count
 
-        model.apply(.envDiscovered(mapping: mapping("prod")))
+        model.apply(.envDiscovered(mapping("prod")))
 
         #expect(model.manage?.environments.count == before)
         guard case .terminal(let message)? = model.manage?.discovery else {
@@ -106,7 +107,7 @@ struct ManageTests {
         #expect(model.manage?.discovery == .working("Discovering…"))
 
         model.apply(.discoveryChoice(
-            what: .accounts, labels: ["Platform (1)", "Sandbox (2)"], defaultIndex: 1
+            what: .accounts, labels: ["Platform (1)", "Sandbox (2)"], default: 1
         ))
         #expect(model.manage?.discovery == .choice(
             prompt: "Choose an account:", labels: ["Platform (1)", "Sandbox (2)"], defaultIndex: 1
@@ -114,7 +115,7 @@ struct ManageTests {
 
         // The next step replaces the picker rather than appearing beside it.
         model.apply(.discoveryInput(
-            what: .filePath, prompt: "Path to the .env file:", defaultText: "/opt/app/.env"
+            what: .filePath, prompt: "Path to the .env file:", default: "/opt/app/.env"
         ))
         #expect(model.manage?.discovery == .input(
             prompt: "Path to the .env file:", text: "/opt/app/.env"
@@ -151,7 +152,7 @@ struct ManageTests {
         let model = model()
         model.openManage(0)
         model.beginDiscovery(environment: "qa", method: .ssmDotenv)
-        model.apply(.discoveryChoice(what: .instances, labels: ["i-1", "i-2"], defaultIndex: 0))
+        model.apply(.discoveryChoice(what: .instances, labels: ["i-1", "i-2"], default: 0))
         model.apply(.warning("session logging archives this read to S3"))
 
         #expect(model.manage?.advisory == "session logging archives this read to S3")
@@ -236,7 +237,7 @@ struct ManageTests {
 
         // And a region reached only by a walk shows up once it is saved.
         model.openManage(0)
-        model.apply(.envDiscovered(mapping: mapping("gov", region: "us-gov-west-1")))
+        model.apply(.envDiscovered(mapping("gov", region: "us-gov-west-1")))
         #expect(model.regionChoices.contains("us-gov-west-1"))
     }
 

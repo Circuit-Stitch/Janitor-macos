@@ -11,6 +11,7 @@
 //  are wired to it. A rule can be right and unused, and that is the failure this file
 //  exists to catch.
 
+import JanitorKit
 import XCTest
 
 @MainActor

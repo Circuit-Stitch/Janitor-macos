@@ -10,6 +10,7 @@
 //  Nothing is unlocked by asking. Read-write mode is the worker's, and the shell reflects
 //  what the worker said rather than what the toggle was set to.
 
+import JanitorKit
 import Testing
 @testable import Janitor
 
@@ -26,6 +27,7 @@ struct EditTests {
                 environments: ["prod", "staging"],
                 rows: [
                     MatrixRow(
+                        key: .entry("STRIPE_API_KEY"),
                         name: "STRIPE_API_KEY", state: .drift, kind: .string,
                         cells: [
                             .present(len: 20, group: 1, hex: "aaaa", kind: .string),
@@ -33,11 +35,13 @@ struct EditTests {
                         ]
                     ),
                     MatrixRow(
+                        key: .entry("LEGACY_TOKEN"),
                         name: "LEGACY_TOKEN", state: .gap, kind: .string,
                         cells: [.present(len: 16, group: 1, hex: "cccc", kind: .string), .absent]
                     ),
                 ]
             ),
+            corrected: [],
             appName: "Payments API"
         ))
         return model
@@ -120,7 +124,9 @@ struct EditTests {
 
         #expect(model.pending?.count == 1)
         #expect(model.pendingSummary[0].contains("LEGACY_TOKEN"))
-        #expect(model.pendingSummary[0].contains("removed"))
+        #expect(model.pendingSummary[0].contains("remove"))
+        // A removal writes no Value, so its line carries no byte count either.
+        #expect(!model.pendingSummary[0].contains("bytes"))
     }
 
     @Test("a batch belongs to one Environment")

@@ -13,6 +13,7 @@
 //  stages; it does not send. What is sent goes through the engine that rewrites the
 //  Entries in the batch and leaves the rest of the Set exactly as it found it.
 
+import JanitorKit
 import SwiftUI
 
 /// The editor for one cell's Value.

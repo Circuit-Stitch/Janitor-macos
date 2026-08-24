@@ -9,6 +9,7 @@
 //  The app runs on `StubCore`, so every launch renders the same seeded Applications with
 //  no network and no credential. The Values in it are fabricated.
 
+import JanitorKit
 import XCTest
 
 @MainActor
@@ -40,6 +41,10 @@ enum JanitorApplication {
     static func launch(width: Int, height: Int = 800) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["JANITOR_WINDOW_SIZE"] = "\(width)x\(height)"
+        // The offline Provider, and a Config that is never written. Without this the
+        // launched app would try a real browser sign-in and edit the developer's own
+        // config.toml.
+        app.launchEnvironment["JANITOR_MOCK"] = "1"
         // Otherwise a restored window frame from an earlier run overrides the size the
         // test asked for.
         app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]

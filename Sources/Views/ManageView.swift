@@ -12,6 +12,7 @@
 //  be on screen at once. An advisory is separate, because it describes the walk rather
 //  than asking anything, and it belongs beside the question.
 
+import JanitorKit
 import SwiftUI
 
 struct ManageView: View {
@@ -142,7 +143,7 @@ struct ManageView: View {
                 .onSubmit(startWalk)
 
             Picker("Method", selection: $method) {
-                ForEach(SecretMethod.allCases) { method in
+                ForEach(model.methodChoices()) { method in
                     Text(model.methodName(method)).tag(method)
                 }
             }

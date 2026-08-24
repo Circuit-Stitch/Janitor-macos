@@ -8,6 +8,7 @@
 //  Nearly all of Janitor's logic is tested in Rust. What is left for these tests is what
 //  the shell genuinely owns — the two race guards and the reveal lifetime.
 
+import JanitorKit
 import Testing
 import Foundation
 @testable import Janitor
@@ -23,14 +24,34 @@ struct AppModelTests {
             environments: ["prod", "staging"],
             rows: [
                 MatrixRow(
+                    key: .entry("A"),
                     name: "A", state: .drift, kind: .string,
                     cells: [
                         .present(len: 3, group: 1, hex: "aaaa", kind: .string),
                         .present(len: 4, group: 2, hex: "bbbb", kind: .string),
                     ]
-                )
+                ),
+                MatrixRow(
+                    key: .entry("B"),
+                    name: "B", state: .drift, kind: .string,
+                    cells: [
+                        .present(len: 5, group: 1, hex: "cccc", kind: .string),
+                        .present(len: 6, group: 2, hex: "dddd", kind: .string),
+                    ]
+                ),
             ]
         )
+    }
+
+    /// A model with a matrix on screen. A reveal is addressed by the row's key, which
+    /// comes from the loaded matrix, so a reveal before a load asks for nothing.
+    private func loaded() -> AppModel {
+        let model = model()
+        model.loadSelected()
+        model.apply(.appLoaded(
+            view: view("Payments API"), corrected: [], appName: "Payments API"
+        ))
+        return model
     }
 
     // MARK: The stale-load guard
@@ -39,10 +60,10 @@ struct AppModelTests {
     func loadForTheSelectedApplicationLands() {
         let model = model()
         model.loadSelected()
-        model.apply(.appLoaded(view: view("Payments API"), appName: "Payments API"))
+        model.apply(.appLoaded(view: view("Payments API"), corrected: [], appName: "Payments API"))
 
         #expect(model.status == .loaded)
-        #expect(model.matrix.rows.count == 1)
+        #expect(model.matrix.rows.count == 2)
     }
 
     @Test("a load that names a different Application is dropped")
@@ -52,7 +73,7 @@ struct AppModelTests {
 
         // The operator switched while this one was in flight. Applying it would paint
         // one Application's matrix under another one's name.
-        model.apply(.appLoaded(view: view("Auth Service"), appName: "Auth Service"))
+        model.apply(.appLoaded(view: view("Auth Service"), corrected: [], appName: "Auth Service"))
 
         #expect(model.matrix.rows.isEmpty)
         #expect(model.status != .loaded)
@@ -62,7 +83,7 @@ struct AppModelTests {
 
     @Test("a revealed Value for the held cell is shown")
     func revealForTheHeldCellIsShown() {
-        let model = model()
+        let model = loaded()
         model.beginReveal(row: 0, col: 1)
         model.apply(.revealed(row: 0, col: 1, text: "hunter2"))
 
@@ -73,7 +94,7 @@ struct AppModelTests {
 
     @Test("a revealed Value arriving after the release is dropped")
     func revealAfterReleaseIsDropped() {
-        let model = model()
+        let model = loaded()
         model.beginReveal(row: 0, col: 1)
         model.endReveal()
 
@@ -86,7 +107,7 @@ struct AppModelTests {
 
     @Test("a revealed Value for a cell that is not the held one is dropped")
     func revealForAnotherCellIsDropped() {
-        let model = model()
+        let model = loaded()
         model.beginReveal(row: 0, col: 1)
         model.apply(.revealed(row: 3, col: 0, text: "hunter2"))
 
@@ -95,7 +116,7 @@ struct AppModelTests {
 
     @Test("beginning a second reveal replaces the first")
     func onlyOneCellIsEverRevealed() {
-        let model = model()
+        let model = loaded()
         model.beginReveal(row: 0, col: 0)
         model.apply(.revealed(row: 0, col: 0, text: "first"))
         model.beginReveal(row: 1, col: 1)
@@ -124,12 +145,12 @@ struct AppModelTests {
     func failedLoadShowsTheBanner() {
         let model = model()
         model.loadSelected()
-        model.apply(.appLoaded(view: view("Payments API"), appName: "Payments API"))
+        model.apply(.appLoaded(view: view("Payments API"), corrected: [], appName: "Payments API"))
         model.loadSelected()
-        model.apply(.appFailed(failures: [
-            Failure(environment: "prod", detail: "secret not found"),
-            Failure(environment: "dev", detail: "the role is not assigned"),
-        ]))
+        model.apply(.appFailed(AppError(failures: [
+            Failure(environment: "prod", reason: .notFound, detail: "secret not found"),
+            Failure(environment: "dev", reason: .accessDenied, detail: "the role is not assigned"),
+        ])))
 
         #expect(model.status == .failed)
         #expect(model.matrix.rows.isEmpty)
@@ -158,7 +179,7 @@ struct AppModelTests {
     func copyLogsTheNameNotTheValue() {
         let model = model()
         model.loadSelected()
-        model.apply(.appLoaded(view: view("Payments API"), appName: "Payments API"))
+        model.apply(.appLoaded(view: view("Payments API"), corrected: [], appName: "Payments API"))
         model.apply(.copyValue(row: 0, col: 1, text: "hunter2"))
 
         let lines = model.log.map(\.message)
@@ -170,7 +191,7 @@ struct AppModelTests {
     func theLogNeverCarriesAValue() {
         let model = model()
         model.loadSelected()
-        model.apply(.appLoaded(view: view("Payments API"), appName: "Payments API"))
+        model.apply(.appLoaded(view: view("Payments API"), corrected: [], appName: "Payments API"))
         model.beginReveal(row: 0, col: 0)
         model.apply(.revealed(row: 0, col: 0, text: "hunter2"))
         model.apply(.warning("session logging archives this read to S3"))

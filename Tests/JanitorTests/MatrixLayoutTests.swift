@@ -10,6 +10,7 @@
 //  app. The split is deliberate: this file proves the rule is right, and the UI tests
 //  prove the views are wired to it.
 
+import JanitorKit
 import Testing
 import CoreGraphics
 @testable import Janitor

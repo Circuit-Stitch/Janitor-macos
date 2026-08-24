@@ -10,6 +10,7 @@
 //  moment the selection decides the binding. Afterwards the window keeps it, and
 //  clicking a different row here does not move it.
 
+import JanitorKit
 import SwiftUI
 
 struct SidebarView: View {
@@ -90,7 +91,7 @@ struct SidebarView: View {
         )
     }
 
-    private func row(_ app: SidebarApp) -> some View {
+    private func row(_ app: SidebarRow) -> some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(app.name)

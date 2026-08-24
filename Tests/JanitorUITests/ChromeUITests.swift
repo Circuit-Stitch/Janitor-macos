@@ -7,6 +7,7 @@
 //  is where a Value would be easiest to leak by accident, so the log is read line by line
 //  and none of it may carry one.
 
+import JanitorKit
 import XCTest
 
 @MainActor

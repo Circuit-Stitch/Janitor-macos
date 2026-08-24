@@ -15,6 +15,7 @@
 //  is drawn here is the worker's answer, which is why flipping it and seeing nothing
 //  change would be correct behavior rather than a bug.
 
+import JanitorKit
 import SwiftUI
 
 struct SettingsView: View {

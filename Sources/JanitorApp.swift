@@ -2,18 +2,32 @@
 //  The composition root.
 //
 //  It builds one core, wraps it in one model, and hands that model to the windows. The
-//  choice of core is the only decision made here, and today there is one to choose
-//  from.
+//  choice of core is the only decision made here: the real one, driving the Rust worker
+//  over JanitorKit. `JANITOR_MOCK=1` swaps the Provider behind it for the offline one
+//  and stops Config being written, which is what the UI tests run against.
 //
 //  Three scenes. The matrix is the main window. Manage is a second window rather than a
 //  sheet, because it stays bound to one Application while the operator keeps working in
 //  the first. Settings is a `Settings` scene, so it lands where every Mac app puts it.
 
+import JanitorKit
 import SwiftUI
 
 @main
 struct JanitorApp: App {
-    @State private var model = AppModel(core: StubCore())
+    @State private var model = JanitorApp.build()
+
+    /// Build the core and the model over it, and route a failed Config write into the
+    /// Diagnostic Log rather than letting it disappear.
+    @MainActor
+    private static func build() -> AppModel {
+        let core = JanitorKitCore.launch()
+        let model = AppModel(core: core)
+        core.onConfigError = { reason in
+            Task { @MainActor in model.report(reason) }
+        }
+        return model
+    }
 
     var body: some Scene {
         Window("Janitor", id: "main") {

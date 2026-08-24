@@ -6,6 +6,7 @@
 //  out. Two guards in it are load-bearing and are described where they are applied.
 
 import Foundation
+import JanitorKit
 import Observation
 
 /// The single revealed cell. One optional, not a set, so "exactly one cell un-masks" is
@@ -63,7 +64,12 @@ struct ManageSession: Sendable, Hashable {
 struct PendingEdits: Sendable {
     /// The column being edited, for the matrix to mark.
     var column: Int
-    var environment: String
+    /// Where the write goes. A Mapping, not a name: the engine needs the account, the
+    /// region, the Set id, and the role, and the shell is not the place one is
+    /// assembled.
+    var mapping: Mapping
+
+    var environment: String { mapping.environment }
     /// Keyed by Entry name, last write wins, so editing the same cell twice stages one
     /// edit rather than two.
     var edits: [String: EnvEdit] = [:]
@@ -120,7 +126,7 @@ final class AppModel {
 
     // MARK: Rendered state
 
-    private(set) var apps: [SidebarApp] = []
+    private(set) var apps: [SidebarRow] = []
     private(set) var selected = 0
     private(set) var status: LoadStatus = .idle
     private(set) var matrix: MatrixView = .empty
@@ -215,16 +221,20 @@ final class AppModel {
     }
 
     func loadSelected() {
-        guard selected < apps.count else { return }
+        let configured = core.applications()
+        guard selected < configured.count else { return }
         banner = nil
-        loadingApp = apps[selected].name
-        core.send(.loadApp(index: selected))
+        loadingApp = configured[selected].name
+        // The Application itself, not its index. The worker holds no Config, so the
+        // Mappings to fetch travel with the command.
+        core.send(.loadApp(configured[selected]))
     }
 
     /// Begin a momentary reveal of one cell. The plaintext arrives as an event.
     func beginReveal(row: Int, col: Int) {
+        guard let key = matrix.rows[safe: row]?.key else { return }
         pendingReveal = (row, col)
-        core.send(.reveal(row: row, col: col))
+        core.send(.reveal(row: Usize(row), col: Usize(col), key: key))
         revealTimer?.cancel()
         revealTimer = Task { [weak self] in
             try? await Task.sleep(for: Self.revealTimeout)
@@ -234,14 +244,14 @@ final class AppModel {
     }
 
     /// End the reveal. Called on release, on the window losing focus, and on timeout.
+    ///
+    /// There is no command for this. A reveal is one round trip and the core keeps no
+    /// pending state to clear, so dropping the plaintext here is the whole of it.
     func endReveal() {
         revealTimer?.cancel()
         revealTimer = nil
         pendingReveal = nil
-        if revealed != nil {
-            revealed = nil
-            core.send(.endReveal)
-        }
+        revealed = nil
     }
 
     /// Copy an Entry name. A name is metadata, so it goes on the pasteboard plainly.
@@ -253,7 +263,8 @@ final class AppModel {
     /// Copy a cell's Value. The plaintext arrives as an event and goes straight to the
     /// pasteboard; it is never held in view state and never logged.
     func copyValue(row: Int, col: Int) {
-        core.send(.copyValue(row: row, col: col))
+        guard let key = matrix.rows[safe: row]?.key else { return }
+        core.send(.copyValue(row: Usize(row), col: Usize(col), key: key))
     }
 
     /// Flip the read-write lock. The worker is the authority: it decides, and
@@ -342,14 +353,14 @@ final class AppModel {
         guard let batch = pending else { return }
         reviewing = false
         note(.info, "applying \(batch.count) edit(s) to \(batch.environment)")
-        core.send(.applyEdits(environment: batch.environment, edits: batch.ordered))
+        core.send(.applyEdits(mapping: batch.mapping, edits: batch.ordered))
     }
 
     /// The batch described by Entry name and Value length. This is what the review
     /// dialog shows and the only description of an edit that leaves the model.
     var pendingSummary: [String] {
         guard let batch = pending else { return [] }
-        return core.summarizeEdits(batch.ordered)
+        return core.summarizeEdits(batch.ordered).map(\.line)
     }
 
     /// Whether one cell has an edit staged, for the matrix to mark it.
@@ -365,7 +376,8 @@ final class AppModel {
     /// does not have.
     private func batch(for col: Int, environment: String) -> PendingEdits? {
         guard let existing = pending else {
-            return PendingEdits(column: col, environment: environment)
+            guard let mapping = core.environments(of: selected)[safe: col] else { return nil }
+            return PendingEdits(column: col, mapping: mapping)
         }
         guard existing.column == col else {
             editNotice = EditNotice(
@@ -467,7 +479,14 @@ final class AppModel {
         session.discovery = .working("Discovering…")
         session.advisory = nil
         manage = session
-        core.send(.beginDiscovery(method: method, environment: name, region: browseRegion))
+        core.send(.beginDiscovery(
+            method: method,
+            environment: name,
+            region: browseRegion,
+            // The last successful pick, so the walk preselects it rather than making the
+            // operator find the same account and role again.
+            remembered: core.lastPick()
+        ))
     }
 
     /// Send the operator's pick back into the walk.
@@ -475,7 +494,7 @@ final class AppModel {
         guard var session = manage else { return }
         session.discovery = .working("Discovering…")
         manage = session
-        core.send(.advanceDiscovery(choice: choice))
+        core.send(.advanceDiscovery(choice: Usize(choice)))
     }
 
     /// Send the operator's typed answer back into the walk. It is a location, so it is
@@ -521,9 +540,12 @@ final class AppModel {
             status = .signingIn
             note(.info, "signing in")
 
-        case .signedIn(let identity):
-            self.identity = identity
-            note(.info, "signed in as \(identity)")
+        case .signedIn:
+            // The event carries no identity. The portal the session came from is the
+            // one thing the shell already knows and can show, and it is a location.
+            let portal = core.identityCenter().startUrl
+            identity = portal.isEmpty ? "Signed in" : portal
+            note(.info, "signed in")
             loadSelected()
 
         case .signInFailed(let reason):
@@ -534,7 +556,7 @@ final class AppModel {
         case .appLoading:
             status = .loading
 
-        case .appLoaded(let view, let appName):
+        case .appLoaded(let view, let corrected, let appName):
             // The stale-load guard.
             guard appName == loadingApp else { return }
             loadingApp = nil
@@ -542,23 +564,33 @@ final class AppModel {
             matrix = view
             banner = nil
             loadedAt = Date()
+            // A load can recover a role whose permission set has moved. Folding it back
+            // into Config is what stops the next load rediscovering it. The core matches
+            // the Environment by full identity and touches nothing else.
+            if !corrected.isEmpty {
+                let applied = core.applyCorrectedRoles(
+                    application: selected, corrected: corrected
+                )
+                if applied > 0 { note(.info, "recovered \(applied) role(s)") }
+            }
             rebuildItems()
             rebuildSidebar()
             note(.info, "\(appName) loaded — \(view.rows.count) entries across \(view.environments.count) environments")
 
-        case .appFailed(let failures):
+        case .appFailed(let error):
             loadingApp = nil
             status = .failed
             matrix = .empty
             items = []
-            banner = core.errorBanner(failures)
+            banner = core.errorBanner(error)
             rebuildSidebar()
-            for failure in failures {
+            for failure in error.failures {
                 note(.error, "\(failure.environment): \(failure.detail)")
             }
 
         case .revealed(let row, let col, let text):
             // The release-race guard.
+            let (row, col) = (Int(row), Int(col))
             guard let pending = pendingReveal, pending.row == row, pending.col == col else {
                 return
             }
@@ -571,7 +603,7 @@ final class AppModel {
         case .copyValue(let row, let col, let text):
             Pasteboard.copyConcealed(text)
             armPasteboardClear()
-            note(.info, "\(label(row: row, col: col)) copied to clipboard")
+            note(.info, "\(label(row: Int(row), col: Int(col))) copied to clipboard")
 
         case .copyUnavailable:
             note(.warn, "nothing to copy — the entry is absent here")
@@ -619,7 +651,9 @@ final class AppModel {
         case .discoveryChoice(let what, let labels, let defaultIndex):
             guard var session = manage else { return }
             session.discovery = .choice(
-                prompt: core.choicePrompt(what), labels: labels, defaultIndex: defaultIndex
+                prompt: core.choicePrompt(what),
+                labels: labels,
+                defaultIndex: defaultIndex.map(Int.init)
             )
             manage = session
 
@@ -678,6 +712,13 @@ final class AppModel {
                 message: "The worker refused the write: read-write mode is off. Your edits "
                     + "are still staged."
             )
+
+        // JanitorKit ships with library evolution, so Swift treats Event as able to gain
+        // a case. One this build cannot name reaches the Diagnostic Log rather than
+        // disappearing, because a shell that silently ignores the core is the hardest
+        // kind of mismatch to diagnose.
+        @unknown default:
+            note(.warn, "the core sent an event this build does not know")
         }
     }
 
@@ -710,7 +751,12 @@ final class AppModel {
 
     /// A pending edit, described by Entry name and Value length.
     func summarizeEdits(_ edits: [EnvEdit]) -> [String] {
-        core.summarizeEdits(edits)
+        core.summarizeEdits(edits).map(\.line)
+    }
+
+    /// The Methods the Manage window's picker offers, in order.
+    func methodChoices() -> [SecretMethod] {
+        core.methodChoices()
     }
 
     // MARK: View state the core persists
@@ -722,7 +768,7 @@ final class AppModel {
         CGFloat(
             core.entryColumnWidth(
                 minimum: Double(MatrixLayout.entryFloor),
-                default: Double(MatrixLayout.entryDefault)
+                fallback: Double(MatrixLayout.entryDefault)
             )
         )
     }
@@ -743,6 +789,9 @@ final class AppModel {
             case .aligned: counts.aligned += 1
             case .drift: counts.drift += 1
             case .gap: counts.gap += 1
+            // A state this build cannot name is counted nowhere. The legend adds up to
+            // fewer than the rows rather than misreporting one of the three.
+            @unknown default: break
             }
         }
         return counts
@@ -750,7 +799,7 @@ final class AppModel {
 
     /// Which main pane to show.
     var pane: MainPane {
-        core.mainPane(status: status, hasApplications: !apps.isEmpty)
+        core.mainPane(status: status)
     }
 
     func paneTitle(_ pane: MainPane) -> String {
@@ -773,22 +822,13 @@ final class AppModel {
     private func rebuildConfig() {
         regionChoices = core.regionChoices()
         browseRegion = core.browseRegion()
-        let identity = core.identityCenter()
-        ssoStartURL = identity.startURL
-        ssoRegion = identity.region
+        let org = core.identityCenter()
+        ssoStartURL = org.startUrl
+        ssoRegion = org.region
     }
 
     private func rebuildSidebar() {
-        apps = core.applications().enumerated().map { index, app in
-            SidebarApp(
-                id: index,
-                name: app.name,
-                subtitle: "\(app.environmentCount) envs",
-                drift: core.driftBadge(
-                    isSelected: index == selected, status: status, view: matrix
-                )
-            )
-        }
+        apps = core.sidebarRows(selected: selected, status: status, view: matrix)
     }
 
     /// `NAME[env]` — the non-secret name of a cell, for the log.
@@ -805,6 +845,12 @@ final class AppModel {
             Pasteboard.clearIfOwned()
             self?.note(.info, "clipboard cleared")
         }
+    }
+
+    /// Record something the shell could not do, for the Diagnostic Log. Used by the
+    /// composition root to surface a failed Config write, which has no event of its own.
+    func report(_ message: String) {
+        note(.error, message)
     }
 
     /// Append to the Diagnostic Log. Never called with a Value.

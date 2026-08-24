@@ -14,6 +14,7 @@
 //  the reveal from one while the other stays open would not defend anything. It would
 //  only make the feature unusable for a blind operator.
 
+import JanitorKit
 import SwiftUI
 
 struct CellView: View {
@@ -102,6 +103,14 @@ struct CellView: View {
                 }
                 .opacity(pressing ? 0.4 : 1)
             }
+
+        // JanitorKit ships with library evolution, so Swift treats its enums as able to
+        // gain a case. A cell this build cannot name draws as absent: an empty cell is
+        // the only reading that cannot mislead about what a Set holds.
+        @unknown default:
+            Text("—")
+                .font(Theme.mono)
+                .foregroundStyle(.tertiary)
         }
     }
 
@@ -141,6 +150,8 @@ struct CellView: View {
             } else {
                 "\(entryName) in \(environment): masked, \(len) bytes, group \(hex)"
             }
+        @unknown default:
+            "\(entryName) in \(environment): absent"
         }
     }
 }

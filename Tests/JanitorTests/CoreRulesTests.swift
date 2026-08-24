@@ -1,11 +1,17 @@
-//  StubCoreTests.swift
-//  Pins the stub to the behavior the Rust seams have.
+//  CoreRulesTests.swift
+//  The pure rules, as the shell reaches them.
 //
-//  These tests exist because the stub carries copies of rules that are tested in Rust.
-//  They are the thing that catches the copies drifting before JanitorKit replaces them.
-//  When it does, these tests point at the real implementation and keep their assertions.
+//  These began as a guard on the stub's own copies of prefix clustering, the name split,
+//  the glyphs, and the drift badge. The copies are gone: every call below lands in Rust
+//  through CoreDefaults, so the assertions now pin the real rules and the seam that
+//  reaches them. A rule that changed in janitor-core fails here.
+//
+//  The canned matrix at the bottom is still the fixture's, because a shell needs
+//  something to render and the mock Provider's Sets are invented in Rust.
 
+import JanitorKit
 import Testing
+
 @testable import Janitor
 
 struct StubCoreTests {
@@ -128,15 +134,20 @@ struct StubCoreTests {
         #expect(core.badgeLabel(kind: .number) == "NUMBER")
     }
 
-    // MARK: The drift badge
+    // MARK: The sidebar
 
     @Test("the drift badge shows only on the selected, loaded row")
     func driftBadgeIsSuppressedElsewhere() {
         let view = StubCore.paymentsView
 
-        #expect(core.driftBadge(isSelected: true, status: .loaded, view: view) != "")
-        #expect(core.driftBadge(isSelected: false, status: .loaded, view: view) == "")
-        #expect(core.driftBadge(isSelected: true, status: .loading, view: view) == "")
+        // The view describes the selected Application alone, so a count on any other row
+        // would either be stale or mean fetching every Application's secrets.
+        let loaded = core.sidebarRows(selected: 0, status: .loaded, view: view)
+        #expect(loaded[0].drift != "")
+        #expect(loaded.dropFirst().allSatisfy { $0.drift == "" })
+
+        let loading = core.sidebarRows(selected: 0, status: .loading, view: view)
+        #expect(loading.allSatisfy { $0.drift == "" })
     }
 
     @Test("no drift means no badge")
@@ -146,7 +157,17 @@ struct StubCoreTests {
             rows: [StubCore.row("A", .string, [StubCore.cell(3, 1), StubCore.cell(3, 1)])]
         )
 
-        #expect(core.driftBadge(isSelected: true, status: .loaded, view: aligned) == "")
+        let rows = core.sidebarRows(selected: 0, status: .loaded, view: aligned)
+        #expect(rows[0].drift == "")
+    }
+
+    @Test("every configured Application gets a row, with its Environment count")
+    func sidebarCountsEnvironments() {
+        let rows = core.sidebarRows(selected: 0, status: .idle, view: .empty)
+
+        #expect(rows.count == core.applications().count)
+        #expect(rows[0].name == "Payments API")
+        #expect(rows[0].subtitle == "2 envs")
     }
 
     // MARK: Canned data

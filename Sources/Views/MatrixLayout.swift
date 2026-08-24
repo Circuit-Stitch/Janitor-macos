@@ -11,6 +11,7 @@
 //  scrolls instead, because a column narrower than the masked cell it holds shows
 //  nothing worth reading.
 
+import JanitorKit
 import CoreGraphics
 
 enum MatrixLayout {

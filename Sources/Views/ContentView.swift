@@ -13,6 +13,7 @@
 //  The window is excluded from other processes' screen captures while a Value is
 //  revealed, and shareable again the moment it is not.
 
+import JanitorKit
 import SwiftUI
 
 struct ContentView: View {
@@ -73,7 +74,10 @@ struct ContentView: View {
                     body: "Add an Application in the sidebar to compare its Environments.",
                     systemImage: "tray"
                 )
-            case .signIn, .signing, .loading, .error:
+            // The catch-all covers the four message panes and any pane a newer
+            // JanitorKit adds: the title and the body come from the core either way, so
+            // an unnamed pane still renders what the core says about it.
+            default:
                 message(
                     title: model.paneTitle(model.pane),
                     body: model.paneBody(model.pane),
