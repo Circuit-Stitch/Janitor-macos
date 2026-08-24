@@ -17,7 +17,7 @@ The two that created this repository:
 | ADR | Decision |
 |---|---|
 | [0001](0001-repository-layout-and-the-generated-xcode-project.md) | The Xcode project is generated at the repository root, and how the entitlements reach the archive. |
-| [0002](0002-one-seam-to-the-core-and-a-stub-behind-it.md) | One protocol is the whole seam to the core, with a stub behind it until the framework is published. |
+| [0002](0002-one-seam-to-the-core-and-a-stub-behind-it.md) | One protocol is the whole seam to the core, with a stub behind it until the framework is published. Amended: the framework landed, and the stub is a test fixture with no rules of its own. |
 | [0003](0003-the-reveal-lifetime-and-the-pasteboard-markers.md) | How long a reveal lives, and what marks a copied Value on the pasteboard. |
 | [0004](0004-ci-is-dispatched-to-the-self-hosted-mac-and-release-goes-through-xcode-cloud.md) | CI is dispatched to the self-hosted Mac. Release goes through Xcode Cloud. Amended: the self-hosted lane is off, and Xcode Cloud is the only lane. |
 | [0005](0005-manage-is-a-window-settings-is-a-settings-scene.md) | Manage is a real window bound to one Application. Settings is a Settings scene. The wizard's three states are one property. |

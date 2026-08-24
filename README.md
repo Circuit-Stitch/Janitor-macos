@@ -60,13 +60,17 @@ guided Discovery wizard fills in a new Environment: the operator types a name an
 method, and the account, the role, and the Set are discovered. Global Settings holds the
 Identity Center fields, the browse-region picker, and the read-write unlock.
 
-It does not read real AWS yet. `JanitorKit.xcframework` — the Rust core compiled for
-macOS — is not published, so the shell runs against `StubCore`, which serves the same
-canned Applications the offline mock Provider serves and scripts a walk through every
-wizard state. Four slices in
-[Janitor](https://github.com/Circuit-Stitch/Janitor) gate the swap: moving the worker
-into the core, adding the UniFFI boundary, granting a depot publisher tenant, and
-publishing the framework.
+It reads real AWS. `JanitorKit.xcframework` — the Rust core compiled for macOS, with
+the UniFFI-generated Swift compiled into it — arrives as a SwiftPM binary target pinned
+by URL and checksum. Xcode never compiles Rust. `JANITOR_MOCK=1` swaps the Provider for
+the offline one, which makes no AWS call and holds Config in memory, so a demo run cannot
+edit real Applications.
+
+The framework is built and published from
+[Janitor](https://github.com/Circuit-Stitch/Janitor). To work against a local build of
+it, check that repository out beside this one, run its
+`scripts/build-xcframework.sh`, and set `JANITORKIT_LOCAL=1` for both `xcodegen` and
+`xcodebuild`. See `JanitorKit/Package.swift`.
 
 Editing works too, behind the read-write unlock. A cell edit stages into a batch for one
 Environment; the review dialog lists each edit by Entry name and byte count, never by
@@ -90,9 +94,11 @@ comparison, no write logic — all of that stays in the Rust core, where it is t
 Sources/
   JanitorApp.swift      the composition root
   Core/
-    Protocol.swift      the command and event vocabulary, mirroring the Rust worker
     JanitorCore.swift   the one seam between the shell and the core
-    StubCore.swift      canned data, until JanitorKit is published
+    CoreDefaults.swift  where that seam reaches JanitorKit, for every core at once
+    JanitorKitCore.swift the real core: the Rust worker and the Config store
+    KitTypes.swift      the names the shell writes, bound to the generated types
+    StubCore.swift      scripted events, for the tests
   Model/
     AppModel.swift      the reducer and every piece of rendering state
   Views/                the windows, the matrix, the cells, the wizard, the log panel
@@ -108,8 +114,14 @@ it, so Swift never drives the Rust runtime.
 Every pure rule the matrix depends on — prefix clustering, the name split, the type
 badge, the state glyph, the drift badge, the error banner — is a function on
 `JanitorCore`, implemented in Rust. The shell calls them. It does not reimplement them.
-`StubCore` carries temporary copies, and the tests in `Tests/JanitorTests` pin those
-copies to the Rust behavior so they cannot drift before they are deleted.
+`CoreDefaults.swift` is the one place those calls land, so the shipping core and the test
+fixture cannot answer differently. The tests in `Tests/JanitorTests` pin the rules
+themselves.
+
+Config is the core's too. `ConfigStore` holds the one copy, and every edit runs the Rust
+rule before it saves: a blank Application name is refused, a duplicate Environment is
+refused rather than overwritten, and a stored column width is never returned below the
+layout floor.
 
 What the shell does own is layout, and layout lives in `MatrixLayout` rather than inside a
 `body` where nothing can reach it. How wide a comparison column is, where it stops

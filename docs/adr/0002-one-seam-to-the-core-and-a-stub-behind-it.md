@@ -71,3 +71,41 @@ Provider's single-thread ownership sound.
   after the swap is recognizably the same thing.
 - **The reveal round trip is real, not faked.** The stub answers a reveal asynchronously,
   so the release race the model guards against actually happens in development.
+
+## Amendment 2026-08-24 — the framework landed, and the stub became a fixture
+
+`JanitorKit.xcframework` exists. `JanitorKitCore` drives the real Rust worker and is
+what the app runs on. The swap went the way this ADR planned: the views and the model
+were written against names the generated types also carry, so replacing the hand-written
+vocabulary was mechanical.
+
+**`Protocol.swift` is deleted.** The generated types are what the shell uses.
+`KitTypes.swift` is what is left of it: three typealiases, a few conformances SwiftUI
+needs, and the `Usize` conversions. `SecretMethod` is still not called `Method`, for the
+reason this ADR gave — a type named `Method` shadows the Objective-C runtime's `Method`
+for the whole module.
+
+**`StubCore` carries no copies of the rules any more.** It scripts events and holds an
+in-memory `ConfigStore`, so every Config rule and every pure rule it answers is the Rust
+one, reached through `CoreDefaults`. Prefix clustering, the name split, the glyphs, the
+badges, and the pane copy were about 250 lines of Swift; they are gone. `StubCoreTests`
+became `CoreRulesTests` and kept its assertions, which now pin the real rules rather than
+guarding a copy against them.
+
+**`CoreDefaults.swift` is where the seam meets the kit.** The pure rules are default
+implementations on `JanitorCore` itself. The Config calls are default implementations for
+anything that has a `ConfigStore`. Both cores inherit both sets, so there is one place a
+call reaches Rust and no way for two implementations to answer differently.
+
+**The seam changed shape in four places, because the Rust protocol is what it is.**
+`loadApp` carries the Application rather than an index — the worker holds no Config.
+`reveal` and `copyValue` carry the row's key, so a reveal is addressed by what it names
+rather than by where it sits. There is no `endReveal`: a reveal is one round trip and the
+core keeps no pending state, so dropping the plaintext in the model is the whole of it.
+`applyEdits` carries the Mapping, because the write engine needs the account, the region,
+the Set, and the role.
+
+**A test never touches a real config file.** Both the fixture and `JANITOR_MOCK=1` build
+their store with the in-memory constructor, which runs every rule and stops before the
+write. The UI tests set `JANITOR_MOCK=1` for the same reason, and because a launched app
+would otherwise open a browser for a real sign-in.
