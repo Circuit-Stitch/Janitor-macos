@@ -7,8 +7,8 @@
 //  statement, and a way through to the third-party notices. All three belong here.
 //
 //  Every string below comes from the bundle. The version, the build, and the copyright
-//  are read from Info.plist, which is generated from project.yml, so this window cannot
-//  disagree with what was shipped. Nothing is hardcoded that the build already knows.
+//  are read from Info.plist, which the build stamps from MARKETING_VERSION and
+//  CURRENT_PROJECT_VERSION, so this window cannot disagree with what was shipped. Nothing is hardcoded that the build already knows.
 //
 //  The logo is one asset. `circuit-stitch.svg` is a single-color stroke drawing, so the
 //  asset catalog renders it as a template and the tint comes from `BrandStroke` — amber

@@ -23,7 +23,6 @@
 // Set JANITORKIT_LOCAL=1 and the package points at the sibling Janitor checkout instead:
 //
 //     cd ../Janitor && ./scripts/build-xcframework.sh
-//     JANITORKIT_LOCAL=1 xcodegen generate
 //     JANITORKIT_LOCAL=1 xcodebuild -scheme Janitor …
 //
 // That is how the boundary is widened and the shell is fixed up in one pass, without a

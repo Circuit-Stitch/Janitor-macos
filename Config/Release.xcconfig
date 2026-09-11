@@ -1,0 +1,4 @@
+// The Release configuration. Nothing differs from Shared.xcconfig yet.
+// Release-only settings belong here.
+
+#include "Shared.xcconfig"
