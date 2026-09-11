@@ -99,9 +99,11 @@ A public repository should not be wired to a virtual machine on the development 
 all. One repository setting, or one careless trigger added later, is the whole distance
 between the safe arrangement and a stranger's code on that machine.
 
-Xcode Cloud is the only lane now. It builds, signs, and uploads. It runs
-`ci_scripts/ci_post_clone.sh` first, so a cold clone is still proven to reach an archive
-on every release build.
+Xcode Cloud is the only lane now. It builds, signs, and uploads.
+
+The cold-clone check it used to carry is gone with the script it ran. `Janitor.xcodeproj`
+is committed source since ADR 0001's amendment, so there is nothing to regenerate and
+`ci_scripts/ci_post_clone.sh` is deleted.
 
 The entitlement assertion is what goes uncovered — all three present, and the count
 exactly three. Run it by hand before an upload. The steps survive in the commented

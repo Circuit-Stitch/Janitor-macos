@@ -34,7 +34,7 @@ acknowledgments. The stock panel has room for the first three and nowhere to put
 rest.
 
 **Every string comes from the bundle.** The version, the build, and the copyright are read
-from Info.plist, which XcodeGen generates from `project.yml`. The window cannot disagree
+from Info.plist, which the build stamps from the version settings in `Config/`. The window cannot disagree
 with what shipped.
 
 **`NSHumanReadableCopyright` carries the copyright alone.** It reads

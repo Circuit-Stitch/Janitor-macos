@@ -1,15 +1,9 @@
 # Xcode / build
 build/
 DerivedData/
-*.xcodeproj/xcuserdata/
-*.xcworkspace/xcuserdata/
+**/xcuserdata/
 *.xcuserstate
 .DS_Store
-
-# XcodeGen generates these from project.yml; keep them out of source control.
-# ci_scripts/ci_post_clone.sh regenerates them on a fresh clone.
-Janitor.xcodeproj/
-Support/Info.plist
 
 # Swift Package Manager
 .build/

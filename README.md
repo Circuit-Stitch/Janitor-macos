@@ -72,8 +72,8 @@ edit real Applications.
 The framework is built and published from
 [Janitor](https://github.com/Circuit-Stitch/Janitor). To work against a local build of
 it, check that repository out beside this one, run its
-`scripts/build-xcframework.sh`, and set `JANITORKIT_LOCAL=1` for both `xcodegen` and
-`xcodebuild`. See `JanitorKit/Package.swift`.
+`scripts/build-xcframework.sh`, and set `JANITORKIT_LOCAL=1` for `xcodebuild`. See
+`JanitorKit/Package.swift`.
 
 Editing works too, behind the read-write unlock. A cell edit stages into a batch for one
 Environment; the review dialog lists each edit by Entry name and byte count, never by
@@ -172,14 +172,18 @@ below has the command, and says why it is a manual step.
 
 ## Build and run
 
-Requires Xcode 26 or newer, macOS 15 or newer, and
-[XcodeGen](https://github.com/yonaskolb/XcodeGen).
+Requires Xcode 26 or newer and macOS 15 or newer. `Janitor.xcodeproj` is committed, so
+a fresh clone opens and builds with no generation step.
 
 ```bash
-brew install xcodegen
-xcodegen generate        # Janitor.xcodeproj is generated and gitignored
 open Janitor.xcodeproj
 ```
+
+Build settings live in `Config/*.xcconfig`, not in the project file. `Shared.xcconfig`
+holds the settings every target uses. `Debug.xcconfig` and `Release.xcconfig` include it
+and carry per-configuration values. Each target has its own file beside them. Edit the
+xcconfig rather than the Build Settings pane: a value typed into the pane is written into
+`Janitor.xcodeproj`, where it overrides the xcconfig and hides it.
 
 From the command line, in two lanes:
 
@@ -199,7 +203,8 @@ certificate can still run everything in the first lane.
 [ADR 0007](docs/adr/0007-the-slint-view-tests-become-two-lanes.md) records the split and
 what each lane covers.
 
-Run `xcodegen generate` again after editing `project.yml` or after adding a source file.
+Adding a source file means adding it to the target in Xcode. The project file is source
+now, so that change is part of the commit.
 
 ## CI
 
@@ -236,9 +241,8 @@ It runs no cargo. The Rust arrives as a prebuilt `JanitorKit.xcframework` from t
 depot, pinned by URL and checksum. Building the core on every run would compile the AWS
 SDK and a large C library from cold each time, with no cache.
 
-`ci_scripts/ci_post_clone.sh` runs first and regenerates the Xcode project. Without it a
-fresh clone has nothing to build. Xcode Cloud is now its only automated caller, so run it
-by hand from a clean clone before a release to check it still works.
+It needs no post-clone script. The Xcode project is committed, so a cold clone has a
+project to build the moment it lands.
 
 ## License
 

@@ -1,0 +1,26 @@
+// Settings shared by every target and every configuration.
+//
+// Debug.xcconfig and Release.xcconfig include this file, and the project assigns
+// one of those two to each configuration. Per-target files layer on top.
+//
+// Keep declarations here rather than in Janitor.xcodeproj. A setting written into
+// the project file overrides the xcconfig and hides it.
+
+MACOSX_DEPLOYMENT_TARGET = 15.0
+
+SWIFT_VERSION = 6.0
+SWIFT_STRICT_CONCURRENCY = complete
+
+// Xcode 26 defaults new projects to MainActor isolation. The UniFFI-generated
+// Swift in JanitorKit does not compile under it, and the model here is explicitly
+// @MainActor where it needs to be.
+SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated
+
+DEVELOPMENT_TEAM = GDV76FJJZ5
+CODE_SIGN_STYLE = Automatic
+
+// The Mac App Store requires both. Hardened runtime defaults to NO on macOS.
+ENABLE_HARDENED_RUNTIME = YES
+
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1

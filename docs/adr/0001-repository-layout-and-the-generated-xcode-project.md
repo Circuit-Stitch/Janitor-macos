@@ -69,3 +69,35 @@ already declares and what Circuit Stitch applications use.
   scroll-offset plumbing by hand.
 - **`apple/build-rust.sh` from the research spec has no home here.** Xcode Cloud runs no
   cargo, so there is no build script phase and no Rust toolchain requirement.
+
+## Amendment, 2026-09-10: the project is committed and the settings live in xcconfigs
+
+`Janitor.xcodeproj` is committed source. So is `Support/Info.plist`. XcodeGen is gone from
+this repository: `project.yml` is deleted, and so is `ci_scripts/ci_post_clone.sh`, whose
+only job was regenerating the project on a cold clone.
+
+Build settings moved out of the project file into `Config/`. `Shared.xcconfig` holds the
+settings every target uses. `Debug.xcconfig` and `Release.xcconfig` include it.
+`Janitor.xcconfig`, `JanitorTests.xcconfig`, and `JanitorUITests.xcconfig` hold the
+per-target settings. The generated project was produced one last time with XcodeGen, with
+`configFiles` already pointing at those files, and that output is what is committed.
+
+The settings the xcconfigs now carry are the ones `project.yml` carried before. Nothing
+changed value. `xcodebuild -showBuildSettings` over all three targets in both
+configurations is identical before and after.
+
+What this changes:
+
+- **A clone opens directly.** No generation step, and no tool to install first. The README
+  says `open Janitor.xcodeproj`.
+- **A project-file diff is now reviewable in part.** A settings change shows up in
+  `Config/` as plain text. Target membership and file references still land in
+  `project.pbxproj`, which stays hard to read and prone to merge conflicts.
+- **The Build Settings pane is a trap.** A value typed there is written into
+  `project.pbxproj`, where it overrides the xcconfig silently. Edit the xcconfig.
+- **Adding a source file is a project-file edit.** It used to be a `project.yml` edit and a
+  regenerate.
+
+The decisions above survive unchanged: the entitlements path is still a build setting
+rather than a generated file, the macOS 15 floor holds, and `nonisolated` is still the
+default actor isolation. They just live in `Config/` now.

@@ -11,8 +11,8 @@
 # to keep a public repository from reaching that machine at all.
 #
 # Xcode Cloud is the only build lane now. It builds, signs, and uploads to App Store
-# Connect. It runs ci_scripts/ci_post_clone.sh first, so a cold clone is still proven to
-# reach an archive on every release build.
+# Connect. Janitor.xcodeproj is committed source, so it needs no generation step before
+# it reaches xcodebuild.
 #
 # One check is lost while this is off: the assertion that the archive carries exactly the
 # three entitlements. Run it by hand before an upload. The Archive step and the "Assert the
@@ -30,16 +30,14 @@
 # ---------------------------------------------------------------------------------------
 # # Build, test, and archive on the self-hosted macOS runner.
 # #
-# # Two things are checked, and both are checks App Review would otherwise make for us, days later.
+# # One thing is checked, and it is a check App Review would otherwise make for us, days later.
 # #
-# # The first is that a cold clone builds. The repository has no Xcode project in it — XcodeGen
-# # generates it — so a runner that has never seen this repository has nothing to build until
-# # ci_scripts/ci_post_clone.sh runs. That is the same script Xcode Cloud runs, so running it here is
-# # what keeps it working.
+# # The archive must still carry the sandbox entitlement. An archive can lose it silently: the
+# # build succeeds, the upload succeeds, and review rejects it. The assertion below turns that
+# # into a failed build instead.
 # #
-# # The second is that the archive still carries the sandbox entitlement. An archive can lose it
-# # silently: the build succeeds, the upload succeeds, and review rejects it. The assertion below
-# # turns that into a failed build instead.
+# # Janitor.xcodeproj is committed source, so a checkout builds with no generation step. The
+# # cold-clone check that used to sit here went away with XcodeGen — see ADR 0001's amendment.
 # #
 # # This workflow does not release. Xcode Cloud builds, signs, and uploads to App Store Connect, and
 # # it holds the certificates and the App Store Connect key. There is no release lane here.
@@ -74,7 +72,7 @@
 #     name: Build, test, archive
 #     # The label is inherited from when this runner served deferno-kmp alone.
 #     #
-#     # This repository must be added to the `apple-builders` organisation runner group before the
+#     # This repository must be added to the `apple-builders` organization runner group before the
 #     # job can be picked up. Without it the run queues and is cancelled after twenty-four hours.
 #     runs-on: [self-hosted, macOS, ARM64, deferno-ios]
 #     timeout-minutes: 30
@@ -100,12 +98,8 @@
 #           echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
 #           "$XCODE/Contents/Developer/usr/bin/xcodebuild" -version
 #
-#       # The same script Xcode Cloud runs. On this runner XcodeGen is already installed, so the
-#       # script skips the brew step and only generates.
-#       - name: Generate the Xcode project
-#         run: ./ci_scripts/ci_post_clone.sh
-#
-#       # The entitlements are hand-written and easy to break with a stray XcodeGen key.
+#       # The entitlements are hand-written, and a bad edit fails at signing time with a much
+#       # worse message than this one.
 #       - name: Check the entitlements file is well formed
 #         run: plutil -lint Support/Janitor.entitlements
 #

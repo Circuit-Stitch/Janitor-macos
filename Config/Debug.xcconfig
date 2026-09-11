@@ -1,0 +1,4 @@
+// The Debug configuration. Nothing differs from Shared.xcconfig yet.
+// Debug-only settings belong here.
+
+#include "Shared.xcconfig"

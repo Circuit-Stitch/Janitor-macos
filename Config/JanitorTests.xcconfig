@@ -1,0 +1,6 @@
+// The unit test bundle.
+
+PRODUCT_BUNDLE_IDENTIFIER = com.circuitstitch.apps.janitor.tests
+
+// The bundle has no Info.plist of its own. Xcode synthesizes one.
+GENERATE_INFOPLIST_FILE = YES

@@ -1,0 +1,711 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		07F19E5970204F1923C61178 /* janitor.icon in Resources */ = {isa = PBXBuildFile; fileRef = BD4323F56E18A7D7537B87DA /* janitor.icon */; };
+		0FF29D9BC57C976444E904D4 /* JanitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B289FBB579D5B85ACC7891 /* JanitorApp.swift */; };
+		19C6086E3F6E1FB09CBF6730 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A9DF62BA96C18757D7B87F /* ContentView.swift */; };
+		21A5223B57D380C4911387C7 /* ManageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FF4DC932F5F67CF42A1457 /* ManageTests.swift */; };
+		3118FB7658A152C83B91BBBC /* ChromeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FA2EDB3D3A808B40A6291B /* ChromeUITests.swift */; };
+		3552AFD10C09D03221F9C273 /* CellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D871DCAE926F07299B8678 /* CellView.swift */; };
+		408561A1C725A2727F5F18B6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B63AA8872AB6FF7810A5644 /* SettingsView.swift */; };
+		437BA05EB1BC47CBBB6A21AA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE55586FE8191ACDAFE39449 /* AppModel.swift */; };
+		4B4D2BCB3622DDFB665F6597 /* JanitorKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9DF0A3647076E470630CDE3 /* JanitorKit */; };
+		4D53A28947D8A98C7F7CB280 /* PasteboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653993223D616589142C9174 /* PasteboardTests.swift */; };
+		4F64073451664D569A7F9028 /* THIRD-PARTY-LICENSES.txt in Resources */ = {isa = PBXBuildFile; fileRef = 579CAFD300C1F6C272972AEA /* THIRD-PARTY-LICENSES.txt */; };
+		5173061AFF15198C9A6D28FB /* StubCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF2BD5A481FD3FE79FF3107 /* StubCore.swift */; };
+		569E111C36A3F5178017647D /* MatrixLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D95F3B28FBDF9695DEF83410 /* MatrixLayoutTests.swift */; };
+		56C1BE496A446BF654036A68 /* JanitorKitCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477980E042A1F43434338718 /* JanitorKitCore.swift */; };
+		5E21D496B6171E64175C56A6 /* ManageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44885E681814DF942117E19B /* ManageView.swift */; };
+		6972DD2371D3B56DEE4FE97E /* Pasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11D1E8AF5D4DFE3CA568F42 /* Pasteboard.swift */; };
+		71E2F345305A3F24AD68F03D /* JanitorKitCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164121554AAD93678196F05E /* JanitorKitCoreTests.swift */; };
+		71FA41F2A8F3649B7E37DECE /* ScreenshotShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9402C05DF97E888D24988CAA /* ScreenshotShield.swift */; };
+		733147471839B42F8A7AE1C7 /* JanitorApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033290E7BCACE14209E44F55 /* JanitorApplication.swift */; };
+		74733CDA47CAC10595EE15A6 /* AcknowledgmentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8069A7AD28CC86FFC3CA830B /* AcknowledgmentsView.swift */; };
+		78EDA39FD8AC0FA9B1ACDAD4 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C3E0FE0EAD241D1C44EFEB7 /* AppModelTests.swift */; };
+		810D4C56679C5E725CE5989E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9E8F05C35EAB97C21536E342 /* Assets.xcassets */; };
+		8535FF99BF7994976CA75A39 /* MatrixTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9E3C2265FF34FB43D09E20 /* MatrixTable.swift */; };
+		927A83802C1BD4D177B398E7 /* DiagnosticLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696C82B4BA97969FFEAB1870 /* DiagnosticLogView.swift */; };
+		9CAEEDBFD695717D6455E9AB /* MatrixLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AF8BA73F8B635C1820BC91 /* MatrixLayout.swift */; };
+		9E2506449B1F0B915675FED4 /* MatrixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDF0FAF3433D0AB580CBE2BB /* MatrixUITests.swift */; };
+		A6916E6EF234AB9CA74DCC86 /* EditViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF56ACEE1DC5E1CB00DDC0A3 /* EditViews.swift */; };
+		A9F3E7C5767916599B907511 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57A83270C7AC08BF81ADA1D /* Theme.swift */; };
+		B89D8BB27B0B0583EA4C09BB /* CoreRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24CC5D29BAF0612D2AB6AB0 /* CoreRulesTests.swift */; };
+		BA508ADFE1631462FBDB9786 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815E2D870324872741D4DBE5 /* SidebarView.swift */; };
+		BC184E4ADD61CFF77FBB7D0B /* JanitorCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28EFCAC2AF317CDEC41B73F /* JanitorCore.swift */; };
+		BD19F60E7AED85DECDEB65D5 /* KitTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED0EB95944842DE47FC6977 /* KitTypes.swift */; };
+		E0ABAC26984FBAEB10D68B5D /* CoreDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501EF5F60F017DD0AE734CB9 /* CoreDefaults.swift */; };
+		E21C01F78927CC32D0E04262 /* EditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBC040A2519AB91092517EA /* EditTests.swift */; };
+		F963E6892DB345DFE8FE9969 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F4F2518E36566425A999BF /* AboutView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5610924C845867DF5512D581 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 11BEBCE3989D957083D5FFF9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9154086D8070BDB13C9710D2;
+			remoteInfo = Janitor;
+		};
+		DAD8C49C1798586065663F91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 11BEBCE3989D957083D5FFF9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9154086D8070BDB13C9710D2;
+			remoteInfo = Janitor;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		033290E7BCACE14209E44F55 /* JanitorApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorApplication.swift; sourceTree = "<group>"; };
+		0A0DFC04D90AEFF6BC25ADA6 /* JanitorTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = JanitorTests.xcconfig; sourceTree = "<group>"; };
+		164121554AAD93678196F05E /* JanitorKitCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorKitCoreTests.swift; sourceTree = "<group>"; };
+		1E9E3C2265FF34FB43D09E20 /* MatrixTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixTable.swift; sourceTree = "<group>"; };
+		252DCFD3A05B1389F9F64996 /* Janitor.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Janitor.xcconfig; sourceTree = "<group>"; };
+		25FA2EDB3D3A808B40A6291B /* ChromeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeUITests.swift; sourceTree = "<group>"; };
+		2C3E0FE0EAD241D1C44EFEB7 /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		31A9DF62BA96C18757D7B87F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3F357D6536784FD3A3D53161 /* Janitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Janitor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		42FF4DC932F5F67CF42A1457 /* ManageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageTests.swift; sourceTree = "<group>"; };
+		44885E681814DF942117E19B /* ManageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageView.swift; sourceTree = "<group>"; };
+		477980E042A1F43434338718 /* JanitorKitCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorKitCore.swift; sourceTree = "<group>"; };
+		4927061E861F115B5245040A /* JanitorUITests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = JanitorUITests.xcconfig; sourceTree = "<group>"; };
+		501EF5F60F017DD0AE734CB9 /* CoreDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDefaults.swift; sourceTree = "<group>"; };
+		534947B60B92BA9466D83C5C /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		579CAFD300C1F6C272972AEA /* THIRD-PARTY-LICENSES.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "THIRD-PARTY-LICENSES.txt"; sourceTree = "<group>"; };
+		57A0D726DCD03839C44E2D38 /* JanitorKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = JanitorKit; path = JanitorKit; sourceTree = SOURCE_ROOT; };
+		5B63AA8872AB6FF7810A5644 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		653993223D616589142C9174 /* PasteboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardTests.swift; sourceTree = "<group>"; };
+		696C82B4BA97969FFEAB1870 /* DiagnosticLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLogView.swift; sourceTree = "<group>"; };
+		8069A7AD28CC86FFC3CA830B /* AcknowledgmentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgmentsView.swift; sourceTree = "<group>"; };
+		815E2D870324872741D4DBE5 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		9402C05DF97E888D24988CAA /* ScreenshotShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotShield.swift; sourceTree = "<group>"; };
+		96B289FBB579D5B85ACC7891 /* JanitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorApp.swift; sourceTree = "<group>"; };
+		97D871DCAE926F07299B8678 /* CellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellView.swift; sourceTree = "<group>"; };
+		9BAE20A85E9BA7D11B2C071A /* JanitorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JanitorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E8F05C35EAB97C21536E342 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9EBFF46D7DB6B36C3272513C /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		A2F4F2518E36566425A999BF /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		B24CC5D29BAF0612D2AB6AB0 /* CoreRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreRulesTests.swift; sourceTree = "<group>"; };
+		BD4323F56E18A7D7537B87DA /* janitor.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = janitor.icon; sourceTree = "<group>"; };
+		BDF0FAF3433D0AB580CBE2BB /* MatrixUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixUITests.swift; sourceTree = "<group>"; };
+		C5AF8BA73F8B635C1820BC91 /* MatrixLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixLayout.swift; sourceTree = "<group>"; };
+		CED0EB95944842DE47FC6977 /* KitTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KitTypes.swift; sourceTree = "<group>"; };
+		D95F3B28FBDF9695DEF83410 /* MatrixLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixLayoutTests.swift; sourceTree = "<group>"; };
+		DE55586FE8191ACDAFE39449 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		DEBC040A2519AB91092517EA /* EditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTests.swift; sourceTree = "<group>"; };
+		E11D1E8AF5D4DFE3CA568F42 /* Pasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pasteboard.swift; sourceTree = "<group>"; };
+		E57A83270C7AC08BF81ADA1D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		E584868113E4726F0286FBF6 /* JanitorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JanitorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EBF2BD5A481FD3FE79FF3107 /* StubCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubCore.swift; sourceTree = "<group>"; };
+		EF56ACEE1DC5E1CB00DDC0A3 /* EditViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditViews.swift; sourceTree = "<group>"; };
+		F28EFCAC2AF317CDEC41B73F /* JanitorCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JanitorCore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F7E5D0A827558A100D1A1E9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B4D2BCB3622DDFB665F6597 /* JanitorKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2B24BA7D56758EC525D4450F /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				DE55586FE8191ACDAFE39449 /* AppModel.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		327028B9BB9A26CCA4D86BCC /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				9EBFF46D7DB6B36C3272513C /* Debug.xcconfig */,
+				252DCFD3A05B1389F9F64996 /* Janitor.xcconfig */,
+				0A0DFC04D90AEFF6BC25ADA6 /* JanitorTests.xcconfig */,
+				4927061E861F115B5245040A /* JanitorUITests.xcconfig */,
+				534947B60B92BA9466D83C5C /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		4CC6A8A2440EB029AE2EB4CA /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				501EF5F60F017DD0AE734CB9 /* CoreDefaults.swift */,
+				F28EFCAC2AF317CDEC41B73F /* JanitorCore.swift */,
+				477980E042A1F43434338718 /* JanitorKitCore.swift */,
+				CED0EB95944842DE47FC6977 /* KitTypes.swift */,
+				EBF2BD5A481FD3FE79FF3107 /* StubCore.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		578FDA545E936042187CD6C2 /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				E11D1E8AF5D4DFE3CA568F42 /* Pasteboard.swift */,
+			);
+			path = Platform;
+			sourceTree = "<group>";
+		};
+		57C31AFECD634338362333E3 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				4CC6A8A2440EB029AE2EB4CA /* Core */,
+				2B24BA7D56758EC525D4450F /* Model */,
+				578FDA545E936042187CD6C2 /* Platform */,
+				9114CB510ABA789ECD134470 /* Views */,
+				9E8F05C35EAB97C21536E342 /* Assets.xcassets */,
+				BD4323F56E18A7D7537B87DA /* janitor.icon */,
+				96B289FBB579D5B85ACC7891 /* JanitorApp.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		7E392C1938F31E5E935CED31 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3F357D6536784FD3A3D53161 /* Janitor.app */,
+				9BAE20A85E9BA7D11B2C071A /* JanitorTests.xctest */,
+				E584868113E4726F0286FBF6 /* JanitorUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9114CB510ABA789ECD134470 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A2F4F2518E36566425A999BF /* AboutView.swift */,
+				8069A7AD28CC86FFC3CA830B /* AcknowledgmentsView.swift */,
+				97D871DCAE926F07299B8678 /* CellView.swift */,
+				31A9DF62BA96C18757D7B87F /* ContentView.swift */,
+				696C82B4BA97969FFEAB1870 /* DiagnosticLogView.swift */,
+				EF56ACEE1DC5E1CB00DDC0A3 /* EditViews.swift */,
+				44885E681814DF942117E19B /* ManageView.swift */,
+				C5AF8BA73F8B635C1820BC91 /* MatrixLayout.swift */,
+				1E9E3C2265FF34FB43D09E20 /* MatrixTable.swift */,
+				9402C05DF97E888D24988CAA /* ScreenshotShield.swift */,
+				5B63AA8872AB6FF7810A5644 /* SettingsView.swift */,
+				815E2D870324872741D4DBE5 /* SidebarView.swift */,
+				E57A83270C7AC08BF81ADA1D /* Theme.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9C6F833658BFD9AB9AC4D56F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				57A0D726DCD03839C44E2D38 /* JanitorKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		AEB17612875CABB68690D778 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				579CAFD300C1F6C272972AEA /* THIRD-PARTY-LICENSES.txt */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		C871103E0C0F9AAEB7696CD4 /* JanitorTests */ = {
+			isa = PBXGroup;
+			children = (
+				2C3E0FE0EAD241D1C44EFEB7 /* AppModelTests.swift */,
+				B24CC5D29BAF0612D2AB6AB0 /* CoreRulesTests.swift */,
+				DEBC040A2519AB91092517EA /* EditTests.swift */,
+				164121554AAD93678196F05E /* JanitorKitCoreTests.swift */,
+				42FF4DC932F5F67CF42A1457 /* ManageTests.swift */,
+				D95F3B28FBDF9695DEF83410 /* MatrixLayoutTests.swift */,
+				653993223D616589142C9174 /* PasteboardTests.swift */,
+			);
+			path = JanitorTests;
+			sourceTree = "<group>";
+		};
+		D681EA61D1165EBBBAF9B157 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				C871103E0C0F9AAEB7696CD4 /* JanitorTests */,
+				F2B6FA1FABE795485746ADC4 /* JanitorUITests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		EF8D37F51241E11A618E24E0 = {
+			isa = PBXGroup;
+			children = (
+				327028B9BB9A26CCA4D86BCC /* Config */,
+				9C6F833658BFD9AB9AC4D56F /* Packages */,
+				57C31AFECD634338362333E3 /* Sources */,
+				AEB17612875CABB68690D778 /* Support */,
+				D681EA61D1165EBBBAF9B157 /* Tests */,
+				7E392C1938F31E5E935CED31 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F2B6FA1FABE795485746ADC4 /* JanitorUITests */ = {
+			isa = PBXGroup;
+			children = (
+				25FA2EDB3D3A808B40A6291B /* ChromeUITests.swift */,
+				033290E7BCACE14209E44F55 /* JanitorApplication.swift */,
+				BDF0FAF3433D0AB580CBE2BB /* MatrixUITests.swift */,
+			);
+			path = JanitorUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		74CD32AD93DD4180592569A2 /* JanitorUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8F3B10EB3F9F59CF4E74754F /* Build configuration list for PBXNativeTarget "JanitorUITests" */;
+			buildPhases = (
+				6AF060749E1465F21B98905B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				52C2B5F6AE4DBD80F5180204 /* PBXTargetDependency */,
+			);
+			name = JanitorUITests;
+			packageProductDependencies = (
+			);
+			productName = JanitorUITests;
+			productReference = E584868113E4726F0286FBF6 /* JanitorUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		9154086D8070BDB13C9710D2 /* Janitor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 05521801E4F3FA6EDC9947CF /* Build configuration list for PBXNativeTarget "Janitor" */;
+			buildPhases = (
+				F2D57798FCE4A1D49671C3C5 /* Sources */,
+				D2D6DE04ECCCF4492690579A /* Resources */,
+				F7E5D0A827558A100D1A1E9A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Janitor;
+			packageProductDependencies = (
+				A9DF0A3647076E470630CDE3 /* JanitorKit */,
+			);
+			productName = Janitor;
+			productReference = 3F357D6536784FD3A3D53161 /* Janitor.app */;
+			productType = "com.apple.product-type.application";
+		};
+		91846E8B4D661723517D5036 /* JanitorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 42486A65313831A4C8389319 /* Build configuration list for PBXNativeTarget "JanitorTests" */;
+			buildPhases = (
+				20A1AB6ECFCD80849C2A7D98 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5D802AAF952D7574E8BBA092 /* PBXTargetDependency */,
+			);
+			name = JanitorTests;
+			packageProductDependencies = (
+			);
+			productName = JanitorTests;
+			productReference = 9BAE20A85E9BA7D11B2C071A /* JanitorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		11BEBCE3989D957083D5FFF9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					74CD32AD93DD4180592569A2 = {
+						DevelopmentTeam = GDV76FJJZ5;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 9154086D8070BDB13C9710D2;
+					};
+					9154086D8070BDB13C9710D2 = {
+						DevelopmentTeam = GDV76FJJZ5;
+						ProvisioningStyle = Automatic;
+					};
+					91846E8B4D661723517D5036 = {
+						DevelopmentTeam = GDV76FJJZ5;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = DB4202A216605A3562D8172C /* Build configuration list for PBXProject "Janitor" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = EF8D37F51241E11A618E24E0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D3A2382BF630E93955BCBC14 /* XCLocalSwiftPackageReference "JanitorKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7E392C1938F31E5E935CED31 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9154086D8070BDB13C9710D2 /* Janitor */,
+				91846E8B4D661723517D5036 /* JanitorTests */,
+				74CD32AD93DD4180592569A2 /* JanitorUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D2D6DE04ECCCF4492690579A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				810D4C56679C5E725CE5989E /* Assets.xcassets in Resources */,
+				4F64073451664D569A7F9028 /* THIRD-PARTY-LICENSES.txt in Resources */,
+				07F19E5970204F1923C61178 /* janitor.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		20A1AB6ECFCD80849C2A7D98 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				78EDA39FD8AC0FA9B1ACDAD4 /* AppModelTests.swift in Sources */,
+				B89D8BB27B0B0583EA4C09BB /* CoreRulesTests.swift in Sources */,
+				E21C01F78927CC32D0E04262 /* EditTests.swift in Sources */,
+				71E2F345305A3F24AD68F03D /* JanitorKitCoreTests.swift in Sources */,
+				21A5223B57D380C4911387C7 /* ManageTests.swift in Sources */,
+				569E111C36A3F5178017647D /* MatrixLayoutTests.swift in Sources */,
+				4D53A28947D8A98C7F7CB280 /* PasteboardTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AF060749E1465F21B98905B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3118FB7658A152C83B91BBBC /* ChromeUITests.swift in Sources */,
+				733147471839B42F8A7AE1C7 /* JanitorApplication.swift in Sources */,
+				9E2506449B1F0B915675FED4 /* MatrixUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2D57798FCE4A1D49671C3C5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F963E6892DB345DFE8FE9969 /* AboutView.swift in Sources */,
+				74733CDA47CAC10595EE15A6 /* AcknowledgmentsView.swift in Sources */,
+				437BA05EB1BC47CBBB6A21AA /* AppModel.swift in Sources */,
+				3552AFD10C09D03221F9C273 /* CellView.swift in Sources */,
+				19C6086E3F6E1FB09CBF6730 /* ContentView.swift in Sources */,
+				E0ABAC26984FBAEB10D68B5D /* CoreDefaults.swift in Sources */,
+				927A83802C1BD4D177B398E7 /* DiagnosticLogView.swift in Sources */,
+				A6916E6EF234AB9CA74DCC86 /* EditViews.swift in Sources */,
+				0FF29D9BC57C976444E904D4 /* JanitorApp.swift in Sources */,
+				BC184E4ADD61CFF77FBB7D0B /* JanitorCore.swift in Sources */,
+				56C1BE496A446BF654036A68 /* JanitorKitCore.swift in Sources */,
+				BD19F60E7AED85DECDEB65D5 /* KitTypes.swift in Sources */,
+				5E21D496B6171E64175C56A6 /* ManageView.swift in Sources */,
+				9CAEEDBFD695717D6455E9AB /* MatrixLayout.swift in Sources */,
+				8535FF99BF7994976CA75A39 /* MatrixTable.swift in Sources */,
+				6972DD2371D3B56DEE4FE97E /* Pasteboard.swift in Sources */,
+				71FA41F2A8F3649B7E37DECE /* ScreenshotShield.swift in Sources */,
+				408561A1C725A2727F5F18B6 /* SettingsView.swift in Sources */,
+				BA508ADFE1631462FBDB9786 /* SidebarView.swift in Sources */,
+				5173061AFF15198C9A6D28FB /* StubCore.swift in Sources */,
+				A9F3E7C5767916599B907511 /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		52C2B5F6AE4DBD80F5180204 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9154086D8070BDB13C9710D2 /* Janitor */;
+			targetProxy = DAD8C49C1798586065663F91 /* PBXContainerItemProxy */;
+		};
+		5D802AAF952D7574E8BBA092 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9154086D8070BDB13C9710D2 /* Janitor */;
+			targetProxy = 5610924C845867DF5512D581 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		26BCCFB84025CC278B21353D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 252DCFD3A05B1389F9F64996 /* Janitor.xcconfig */;
+			buildSettings = {
+				INFOPLIST_FILE = Support/Info.plist;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3A0A19E3705327CA08367748 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 534947B60B92BA9466D83C5C /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		449133C4542B0518E269884F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4927061E861F115B5245040A /* JanitorUITests.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = Janitor;
+			};
+			name = Debug;
+		};
+		52DDF1764EAF3CA7690EBE9F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4927061E861F115B5245040A /* JanitorUITests.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = Janitor;
+			};
+			name = Release;
+		};
+		7C412339EB4359E2CF8FAA34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0A0DFC04D90AEFF6BC25ADA6 /* JanitorTests.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Janitor.app/Contents/MacOS/Janitor";
+			};
+			name = Debug;
+		};
+		7D7F4AA4DB0D5512F0C26C9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0A0DFC04D90AEFF6BC25ADA6 /* JanitorTests.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Janitor.app/Contents/MacOS/Janitor";
+			};
+			name = Release;
+		};
+		80FF279B4AFDEBC8182FC1A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9EBFF46D7DB6B36C3272513C /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		904243D6BDD1B71D95432006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 252DCFD3A05B1389F9F64996 /* Janitor.xcconfig */;
+			buildSettings = {
+				INFOPLIST_FILE = Support/Info.plist;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		05521801E4F3FA6EDC9947CF /* Build configuration list for PBXNativeTarget "Janitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				904243D6BDD1B71D95432006 /* Debug */,
+				26BCCFB84025CC278B21353D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		42486A65313831A4C8389319 /* Build configuration list for PBXNativeTarget "JanitorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7C412339EB4359E2CF8FAA34 /* Debug */,
+				7D7F4AA4DB0D5512F0C26C9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8F3B10EB3F9F59CF4E74754F /* Build configuration list for PBXNativeTarget "JanitorUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				449133C4542B0518E269884F /* Debug */,
+				52DDF1764EAF3CA7690EBE9F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DB4202A216605A3562D8172C /* Build configuration list for PBXProject "Janitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80FF279B4AFDEBC8182FC1A4 /* Debug */,
+				3A0A19E3705327CA08367748 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D3A2382BF630E93955BCBC14 /* XCLocalSwiftPackageReference "JanitorKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = JanitorKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A9DF0A3647076E470630CDE3 /* JanitorKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JanitorKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 11BEBCE3989D957083D5FFF9 /* Project object */;
+}
